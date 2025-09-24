@@ -1,0 +1,9 @@
+/* 导入 Tailwind 核心样式（必须写这三行） */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 全局简单样式：页面背景色 + 字体 */
+body {
+  @apply bg-gray-50 font-sans;
+}

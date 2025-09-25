@@ -19,4 +19,17 @@ export default class UserApi {
     public static async test(str?: string): Promise<Result<string | null>> {
         return await Axios.get('/user/test', { params: { str } });
     }
+    public static async getCurrentUser(): Promise<Result<User | null>> {
+        return await Axios.get('/user/info');
+    }
+    public static async updateUserInfo(user: User): Promise<Result<boolean>> {
+        return await Axios.put('/user/info', user);
+    }
+    public static async changePassword(oldPassword: string, newPassword: string): Promise<Result<boolean>> {
+        return await Axios.post('/user/change-password', { oldPassword, newPassword });
+    }
+    public static async getUserList(): Promise<Result<User[]>> {
+        return await Axios.get('/user/list');
+    }
+
 }

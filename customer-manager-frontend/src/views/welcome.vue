@@ -1,13 +1,7 @@
 <template>
   <div class="welcome-container">
     <div class="header">
-      <div class="header">
-      <h1>会员管理 - BuildAdmin</h1>
-      <div class="user-info">
-        <span>Admin</span>
-        <button @click="handleLogout" class="logout-button">退出登录</button>
-      </div>
-    </div>
+      
       <h1>会员管理 - BuildAdmin</h1>
       <div class="user-info">
         <span>Admin</span>

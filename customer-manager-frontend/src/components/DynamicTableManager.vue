@@ -12,10 +12,10 @@
     
     <!-- 字段列表 -->
     <div class="metadata-list" v-if="!isLoading">
-      <div v-if="sortedMetadata.length === 0" class="empty-state">
+      <div v-if="store.sortedMetadata.length === 0" class="empty-state">
         暂无字段，请点击"新增字段"添加
       </div>
-      <div class="metadata-item" v-for="item in sortedMetadata" :key="item.id">
+      <div class="metadata-item" v-for="item in store.sortedMetadata" :key="item.id">
         <div class="metadata-info">
           <div class="field-label">{{ item.fieldLabel }}</div>
           <div class="field-detail">

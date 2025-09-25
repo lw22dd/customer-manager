@@ -14,7 +14,7 @@ const mockApi = {
     { id: 3, tableKey: 'customer', fieldName: 'address', fieldLabel: '地址', fieldType: 'text', required: false, sortOrder: 3 },
     { id: 4, tableKey: 'customer', fieldName: 'email', fieldLabel: '邮箱', fieldType: 'text', required: false, sortOrder: 4 },
     { id: 5, tableKey: 'customer', fieldName: 'birthday', fieldLabel: '生日', fieldType: 'date', required: false, sortOrder: 5 }
-  ],
+  ] as DynamicTableMetadata[],
   
   // 模拟记录数据
   mockRecords: [
@@ -27,7 +27,7 @@ const mockApi = {
         address: '北京市朝阳区建国路88号',
         email: 'zhangsan@example.com',
         birthday: '1990-01-01'
-      },
+      } as Record<string, any>,
       createTime: '2024-01-01 10:00:00',
       updateTime: '2024-01-01 10:00:00'
     },
@@ -64,9 +64,11 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   
   // 计算属性
   const sortedMetadata = computed(() => {
-    return [...metadataList.value].sort((a, b) => 
-      (a.sortOrder || 999) - (b.sortOrder || 999)
-    );
+    return metadataList.value && metadataList.value.length > 0 
+      ? [...metadataList.value].sort((a, b) => 
+          (a.sortOrder || 999) - (b.sortOrder || 999)
+        )
+      : [];
   });
   
   const isAllSelected = computed({
@@ -149,11 +151,12 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
           mockApi.mockMetadata[index] = { ...metadata };
         }
       } else {
-        // 添加
+        // 开发环境使用模拟数据
         const newMetadata = {
           ...metadata,
           id: Date.now(),
-          tableKey: currentTableKey.value
+          tableKey: currentTableKey.value,
+          sortOrder: metadata.sortOrder || 999
         };
         mockApi.mockMetadata.push(newMetadata);
       }
@@ -249,8 +252,10 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
       currentPage.value = p;
       pageSize.value = s;
       
-      // 应用搜索
-      applySearch();
+      // 应用搜索 - 只有在有搜索关键词时才应用搜索
+      if (searchKeyword.value.trim()) {
+        applySearch();
+      }
     } catch (error) {
       console.error('分页加载表记录失败:', error);
     } finally {
@@ -290,12 +295,13 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
         // 更新
         const index = mockApi.mockRecords.findIndex(item => item.id === record.id);
         if (index > -1) {
-          mockApi.mockRecords[index] = newRecord;
+          // 确保id有值
+          mockApi.mockRecords[index] = { ...newRecord, id: record.id };
         }
       } else {
         // 添加
         newRecord.id = Date.now();
-        mockApi.mockRecords.push(newRecord);
+        mockApi.mockRecords.push(newRecord as any);
       }
       
       await loadRecordsWithPage();
@@ -406,10 +412,11 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
         
         // 开发环境使用模拟数据
         const allRecords = mockApi.mockRecords.filter(item => item.tableKey === currentTableKey.value);
-        records.value = allRecords.filter(record => 
-          record.data[field] && 
-          String(record.data[field]).toLowerCase().includes(keyword.toLowerCase())
-        );
+        records.value = allRecords.filter(record => {
+          const data = record.data as Record<string, any>;
+          return data[field] && 
+                 String(data[field]).toLowerCase().includes(keyword.toLowerCase());
+        });
         totalRecords.value = records.value.length;
       } else {
         // 搜索所有字段

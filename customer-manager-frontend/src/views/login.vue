@@ -47,6 +47,7 @@ const handleTest = async () => {
   try {
     const response = await UserApi.test('test');
     console.log('test', response);
+    //const tmpRes = await CustomerApi.getCustomerList();
   } catch (error) {
     console.error('test error:', error);
   }

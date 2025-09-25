@@ -4,6 +4,7 @@ import com.wushu.customer.manager.model.PagingResult;
 import com.wushu.customer.manager.model.Result;
 import com.wushu.customer.manager.model.User;
 import com.wushu.customer.manager.service.UserService;
+import com.wushu.customer.manager.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,16 +15,21 @@ import java.util.List;
 public class UserController {
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private JwtUtil jwtUtil;
 
     @PostMapping("/login")
-    public Result<User> login(@RequestBody User loginUser) {
+    public Result<String> login(@RequestBody User loginUser) {
         System.out.println("loginUser: " + loginUser.toString());
         System.out.println("allUser: " + userService.getAllUsers());
         try {
             User user = userService.login(loginUser.getUsername(), loginUser.getPassword());
             if (user != null) {
                 System.out.println("登录成功");
-                return Result.ok(user);
+                // 生成JWT token
+                String token = jwtUtil.generateToken(user.getUsername());
+                return Result.ok(token);
             } else {
                 System.out.println("用户名或密码错误");
                 return Result.fail("用户名或密码错误");

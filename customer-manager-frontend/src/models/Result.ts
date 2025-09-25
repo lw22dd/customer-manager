@@ -5,9 +5,13 @@ type Result<T> = {
     data?: T
 }
 
-type PagingResult<T> = {
-    items: T[]
-    totalCount: number
+// 分页结果接口
+interface PagingResult<T> {
+    records: T[];
+    total: number;
+    size: number;
+    current: number;
+    pages: number;
 }
 
 export type { Result, PagingResult }

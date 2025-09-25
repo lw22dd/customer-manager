@@ -1,10 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import index from '@/views/index.vue' 
+import LoginView from '@/views/login.vue'
+import WelcomeView from '@/views/welcome.vue'
 
 const routes = [
   { path: '/', redirect: '/login' },
-  { path: '/login', component: index },
-  { path: '/welcome', component: index }, // 复用同一组件，实际可拆分
+  { path: '/login', component: LoginView },
+  { path: '/welcome', component: WelcomeView },
 ]
 
 const router = createRouter({

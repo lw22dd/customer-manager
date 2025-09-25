@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.wushu.customer.manager.dao.DynamicTableRecordMapper">
+
+    <resultMap id="DynamicTableRecordMap" type="com.wushu.customer.manager.model.DynamicTableRecord">
+        <id property="id" column="id"/>
+        <result property="tableKey" column="table_key"/>
+        <result property="data" column="data" typeHandler="com.wushu.customer.manager.config.JsonTypeHandler"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <!-- 根据表标识获取所有记录 -->
+    <select id="findByTableKey" resultMap="DynamicTableRecordMap">
+        SELECT * FROM dynamic_table_record 
+        WHERE table_key = #{tableKey} 
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 分页获取记录 -->
+    <select id="findByTableKeyWithPage" resultMap="DynamicTableRecordMap">
+        SELECT * FROM dynamic_table_record 
+        WHERE table_key = #{tableKey} 
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 根据表标识统计记录总数 -->
+    <select id="countByTableKey" resultType="long">
+        SELECT COUNT(*) FROM dynamic_table_record 
+        WHERE table_key = #{tableKey}
+    </select>
+
+    <!-- 根据ID获取记录 -->
+    <select id="findById" resultMap="DynamicTableRecordMap">
+        SELECT * FROM dynamic_table_record WHERE id = #{id}
+    </select>
+
+    <!-- 根据表标识和关键词搜索记录 -->
+    <select id="searchByKeyword" resultMap="DynamicTableRecordMap">
+        SELECT * FROM dynamic_table_record 
+        WHERE table_key = #{tableKey} 
+        AND data LIKE '%' || #{keyword} || '%'
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据表标识、字段名和关键词搜索记录 -->
+    <select id="searchByFieldAndKeyword" resultMap="DynamicTableRecordMap">
+        SELECT * FROM dynamic_table_record 
+        WHERE table_key = #{tableKey} 
+        AND json_extract(data, '$.' || #{fieldName}) LIKE '%' || #{keyword} || '%'
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 插入记录 -->
+    <insert id="insert" parameterType="com.wushu.customer.manager.model.DynamicTableRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO dynamic_table_record(table_key, data, create_time, update_time)
+        VALUES (#{tableKey}, #{data, typeHandler=com.wushu.customer.manager.config.JsonTypeHandler}, #{createTime}, #{updateTime})
+    </insert>
+
+    <!-- 更新记录 -->
+    <update id="update" parameterType="com.wushu.customer.manager.model.DynamicTableRecord">
+        UPDATE dynamic_table_record 
+        SET 
+            table_key = #{tableKey},
+            data = #{data, typeHandler=com.wushu.customer.manager.config.JsonTypeHandler},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除记录 -->
+    <delete id="deleteById">
+        DELETE FROM dynamic_table_record WHERE id = #{id}
+    </delete>
+
+    <!-- 根据表标识删除所有记录 -->
+    <delete id="deleteByTableKey">
+        DELETE FROM dynamic_table_record WHERE table_key = #{tableKey}
+    </delete>
+
+</mapper>

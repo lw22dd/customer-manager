@@ -15,7 +15,7 @@ const router = createRouter({
 })
 
 // 添加路由拦截器
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   // 判断用户是否已登录（从 localStorage 中获取 token）
   const token = localStorage.getItem('token')
   

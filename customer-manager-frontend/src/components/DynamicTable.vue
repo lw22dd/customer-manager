@@ -463,7 +463,7 @@ const resetForm = () => {
   });
   
   // 设置默认值
-  store.sortedMetadata.forEach(field => {
+  store.sortedMetadata.forEach((field: any) => {
     if (field.defaultValue) {
       formData[field.fieldName] = field.defaultValue;
     }

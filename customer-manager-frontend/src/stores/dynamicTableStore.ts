@@ -2,7 +2,6 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import type { DynamicTableMetadata } from '../models/DynamicTableMetadata';
 import type { DynamicTableRecord } from '../models/DynamicTableRecord';
-import DynamicTableApi from '../apis/customerApi';
 import type { PagingResult } from '../models/Result';
 
 // 模拟API（开发环境使用）

@@ -1,4 +1,4 @@
-import type { PagingResult, Result } from "../models/Result";
+import type { Result, PagingResult } from "../models/Result";
 import type { DynamicTableMetadata } from "../models/DynamicTableMetadata";
 import type { DynamicTableRecord } from "../models/DynamicTableRecord";
 import Axios from "../utils/axios";

@@ -42,7 +42,7 @@
     <select id="searchByKeyword" resultMap="DynamicTableRecordMap">
         SELECT * FROM dynamic_table_record 
         WHERE table_key = #{tableKey} 
-        AND data LIKE '%' || #{keyword} || '%'
+        AND data LIKE CONCAT('%', #{keyword}, '%')
         ORDER BY create_time DESC
     </select>
 
@@ -50,7 +50,7 @@
     <select id="searchByFieldAndKeyword" resultMap="DynamicTableRecordMap">
         SELECT * FROM dynamic_table_record 
         WHERE table_key = #{tableKey} 
-        AND json_extract(data, '$.' || #{fieldName}) LIKE '%' || #{keyword} || '%'
+        AND JSON_EXTRACT(data, CONCAT('$.', #{fieldName})) LIKE CONCAT('%', #{keyword}, '%')
         ORDER BY create_time DESC
     </select>
 

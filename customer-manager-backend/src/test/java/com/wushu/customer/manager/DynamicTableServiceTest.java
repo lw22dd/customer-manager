@@ -91,4 +91,49 @@ public class DynamicTableServiceTest {
         List<DynamicTableMetadata> remainingMetadata = dynamicTableService.getFieldMetadataByTableKey(tableKey);
         assertEquals(0, remainingMetadata.size());
     }
+
+    @Test
+public void testQueryAndPrintInitialRecords() throws JsonProcessingException {
+    String tableKey = "customer";
+
+    // 1. 获取客户表的字段元数据
+    List<DynamicTableMetadata> metadataList = dynamicTableService.getFieldMetadataByTableKey(tableKey);
+    System.out.println("=== 客户表字段元数据 ===");
+    metadataList.forEach(metadata -> {
+        System.out.println("字段名: " + metadata.getFieldName() +
+                          ", 标签: " + metadata.getFieldLabel() +
+                          ", 类型: " + metadata.getFieldType() +
+                          ", 必填: " + (metadata.isRequired() ? "是" : "否"));
+    });
+
+    // 2. 获取客户表的所有记录
+    List<DynamicTableRecord> records = dynamicTableService.getRecordsByTableKey(tableKey);
+    System.out.println("\n=== 客户表记录数据 ===");
+    System.out.println("总记录数: " + records.size());
+
+    // 3. 打印每条记录的详细信息
+    for (int i = 0; i < records.size(); i++) {
+        DynamicTableRecord record = records.get(i);
+        System.out.println("\n记录 #" + (i + 1) + ":");
+        System.out.println("  ID: " + record.getId());
+        System.out.println("  创建时间: " + record.getCreateTime());
+        System.out.println("  更新时间: " + record.getUpdateTime());
+        System.out.println("  数据详情:");
+
+        Map<String, Object> data = record.getData();
+        metadataList.stream()
+            .sorted((m1, m2) -> Integer.compare(m1.getSortOrder(), m2.getSortOrder()))
+            .forEach(metadata -> {
+                String fieldName = metadata.getFieldName();
+                Object value = data.get(fieldName);
+                System.out.println("    " + metadata.getFieldLabel() + ": " +
+                                 (value != null ? value.toString() : "无"));
+            });
+    }
+
+    // 4. 验证是否有初始记录
+    assertFalse(records.isEmpty(), "应该存在初始客户记录");
+    System.out.println("\n=== 查询完成 ===");
+}
+
 }

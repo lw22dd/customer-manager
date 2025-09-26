@@ -9,41 +9,8 @@ CREATE TABLE IF NOT EXISTS user (
     regTime DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS customer (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    phone TEXT NOT NULL,
-    address TEXT,
-    email TEXT,
-    id_card TEXT,
-    birthday DATETIME,
-    height REAL,
-    weight REAL,
-    shoe_size TEXT,
-    clothes_size TEXT,
-    athlete_level TEXT,
-    referee_level TEXT,
-    family_heritage TEXT,
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP
-);
 
--- 动态客户表
-CREATE TABLE IF NOT EXISTS dynamic_customer (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    phone TEXT NOT NULL
-);
 
--- 动态客户字段表
-CREATE TABLE IF NOT EXISTS dynamic_customer_field (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    customer_id INTEGER NOT NULL,
-    field_name TEXT NOT NULL,
-    field_value TEXT,
-    field_type TEXT,
-    FOREIGN KEY (customer_id) REFERENCES dynamic_customer(id) ON DELETE CASCADE
-);
 
 -- 动态表元数据表
 CREATE TABLE IF NOT EXISTS dynamic_table_metadata (

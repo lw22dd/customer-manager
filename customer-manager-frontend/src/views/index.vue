@@ -60,7 +60,7 @@ import { ref } from 'vue';
 import DynamicTable from '../components/DynamicTable.vue';
 import DynamicTableManager from '../components/DynamicTableManager.vue';
 import { useRouter } from 'vue-router';
-import UserApi from '../apis/userApi';
+import UserApi from '../apis/userApi.ts';
 // 当前激活的选项卡
 const activeTab = ref('data');
 const router = useRouter();

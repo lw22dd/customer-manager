@@ -1,51 +1,46 @@
 <template>
-    <div class="header">
-      <h1>会员管理 - BuildAdmin</h1>
-      <div class="user-info">
-        <span>Admin</span>
-        <button @click="handleLogout" class="logout-button">退出登录</button>
-      </div>
+  <div class="float-right p-4 flex justify-between items-center mb-6 fixed top-0 right-0">
+    <div class="user-info">
+      <span>Admin</span>
+      <button @click="handleLogout"
+        class="ml-2 bg-red-500 text-white px-4 py-2 rounded-md shadow hover:bg-red-600 transition">退出登录</button>
     </div>
+  </div>
   <div class="dynamic-table-app min-h-screen bg-gray-100 p-4">
     <div class="max-w-7xl mx-auto">
       <header class="mb-8">
         <h1 class="text-2xl font-bold text-gray-800 mb-2">客户管理系统</h1>
         <p class="text-gray-600">基于动态表设计的客户信息管理平台</p>
       </header>
-      
+
       <!-- 导航选项卡 -->
       <div class="bg-white rounded-lg shadow mb-6">
         <div class="flex border-b">
-          <button 
-            class="px-6 py-3 font-medium text-sm" 
-            :class="{ 'border-b-2 border-blue-500 text-blue-500': activeTab === 'data' }"
-            @click="activeTab = 'data'"
-          >
+          <button class="px-6 py-3 font-medium text-sm"
+            :class="{ 'border-b-2 border-blue-500 text-blue-500': activeTab === 'data' }" @click="activeTab = 'data'">
             数据管理
           </button>
-          <button 
-            class="px-6 py-3 font-medium text-sm" 
+          <button class="px-6 py-3 font-medium text-sm"
             :class="{ 'border-b-2 border-blue-500 text-blue-500': activeTab === 'metadata' }"
-            @click="activeTab = 'metadata'"
-          >
+            @click="activeTab = 'metadata'">
             表头管理
           </button>
         </div>
-        
+
         <!-- 内容区域 -->
         <div class="p-4">
           <!-- 数据管理视图 -->
           <div v-if="activeTab === 'data'">
             <DynamicTable />
           </div>
-          
+
           <!-- 表头管理视图 -->
           <div v-if="activeTab === 'metadata'">
             <DynamicTableManager />
           </div>
         </div>
       </div>
-      
+
       <!-- 系统说明 -->
       <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-lg font-semibold mb-4">系统说明</h2>
@@ -69,7 +64,7 @@ import UserApi from '../apis/userApi';
 // 当前激活的选项卡
 const activeTab = ref('data');
 const router = useRouter();
-
+const userName = ref('Admin');
 
 
 // 退出登录函数

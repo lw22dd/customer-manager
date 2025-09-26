@@ -62,7 +62,7 @@ const handleLogin = async () => {
     if (response.code === 200 && response.data) {
       // 登录成功，存储token并跳转到首页
       localStorage.setItem('token', response.data);
-      router.push('/welcome');
+      router.push('/index');
     } else {
       errorMessage.value = response.msg || '登录失败，请检查用户名和密码';
       console.error('登录失败:', response.msg);

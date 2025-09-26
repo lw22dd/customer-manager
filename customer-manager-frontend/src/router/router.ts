@@ -6,7 +6,6 @@ import CustomerView from '@/views/index.vue'
 const routes = [
   { path: '/', redirect: '/login' },
   { path: '/login', component: LoginView },
-  { path: '/welcome', component: WelcomeView },
   { path: '/index', component: CustomerView },
 ]
 

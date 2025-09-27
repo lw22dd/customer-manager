@@ -21,29 +21,29 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   const currentPage = ref<number>(1); // 当前页码
   const pageSize = ref<number>(10); // 每页条数
   const totalRecords = ref<number>(0); // 总记录数
-  
+
   // 计算属性
   const sortedMetadata = computed(() => {
-    return metadataList.value && metadataList.value.length > 0 
-      ? [...metadataList.value].sort((a, b) => 
-          (a.sortOrder || 999) - (b.sortOrder || 999)
-        )
+    return metadataList.value && metadataList.value.length > 0
+      ? [...metadataList.value].sort((a, b) =>
+        (a.sortOrder || 999) - (b.sortOrder || 999)
+      )
       : [];
   });
-  
+
   const isAllSelected = computed({
-    get: () => 
-      records.value.length > 0 && 
+    get: () =>
+      records.value.length > 0 &&
       selectedIds.value.length === records.value.length,
     set: (value) => {
-      selectedIds.value = value 
-        ? records.value.map(item => item.id || 0).filter(Boolean) 
+      selectedIds.value = value
+        ? records.value.map(item => item.id || 0).filter(Boolean)
         : [];
     }
   });
-  
+
   // 方法定义
-  
+
   /**
    * 设置当前表
    */
@@ -52,7 +52,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     // 重置状态
     resetState();
   };
-  
+
   /**
    * 重置状态
    */
@@ -67,7 +67,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     currentPage.value = 1;
     totalRecords.value = 0;
   };
-  
+
   /**
    * 加载表字段元数据
    */
@@ -75,14 +75,15 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     const key = tableKey || currentTableKey.value;
     isLoading.value = true;
     try {
-       const response = await DynamicTableApi.getFieldMetadataByTableKey(key);
-       if (response.code === 200 && response.data) {
+      const response = await DynamicTableApi.getFieldMetadataByTableKey(key);
+      console.log('获取表字段元数据结果:', response);
+      if (response.code === 200 && response.data) {
         metadataList.value = response.data;
-       }else {
-      console.warn('加载元数据失败:', response.msg);
-      metadataList.value = []; // 失败时重置为空
-    }
-    
+      } else {
+        console.warn('加载元数据失败:', response.msg);
+        metadataList.value = []; // 失败时重置为空
+      }
+
     } catch (error) {
       console.error('加载表字段元数据失败:', error);
       metadataList.value = [];
@@ -90,22 +91,23 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
       isLoading.value = false;
     }
   };
-  
+
   /**
    * 保存表字段元数据
    */
   const saveMetadata = async (metadata: DynamicTableMetadata) => {
     isLoading.value = true;
     try {
-       const response = await DynamicTableApi.saveFieldMetadata(metadata);
-     if (response.code === 200 && response.data) {
-         await loadMetadata();
-         return true;
-       }else {
-      console.warn('保存元数据失败:', response.msg);
-      return false;
-    }
-      
+      const response = await DynamicTableApi.saveFieldMetadata(metadata);
+      console.log('保存表字段元数据结果:', response);
+      if (response.code === 200 && response.data) {
+        await loadMetadata();
+        return true;
+      } else {
+        console.warn('保存元数据失败:', response.msg);
+        return false;
+      }
+
     } catch (error) {
       console.error('保存表字段元数据失败:', error);
     } finally {
@@ -113,23 +115,24 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     }
     return false;
   };
-  
+
   /**
    * 删除表字段元数据
    */
   const deleteMetadata = async (id: number) => {
     isLoading.value = true;
     try {
-     
-       const response = await DynamicTableApi.deleteFieldMetadata(id);
-       if (response.code === 200 && response.data) {
-         await loadMetadata();
-         return true;
-       }
+
+      const response = await DynamicTableApi.deleteFieldMetadata(id);
+      console.log('删除表字段元数据结果:', response);
+      if (response.code === 200 && response.data) {
+        await loadMetadata();
+        return true;
+      }
       else {
-      console.warn('删除元数据失败:', response.msg);
-      return false;
-    }
+        console.warn('删除元数据失败:', response.msg);
+        return false;
+      }
     } catch (error) {
       console.error('删除表字段元数据失败:', error);
     } finally {
@@ -137,7 +140,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     }
     return false;
   };
-  
+
   /**
    * 加载表记录
    */
@@ -145,18 +148,19 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     const key = tableKey || currentTableKey.value;
     isLoading.value = true;
     try {
-      
-       const response = await DynamicTableApi.getRecordsByTableKey(key);
-       if (response.code === 200 && response.data) {
-         records.value = response.data;
-         totalRecords.value = response.data.length;
-       }
+
+      const response = await DynamicTableApi.getRecordsByTableKey(key);
+      console.log('获取表所有记录结果:', response);
+      if (response.code === 200 && response.data) {
+        records.value = response.data;
+        totalRecords.value = response.data.length;
+      }
       else {
-      console.warn('加载表记录失败:', response.msg);
-      records.value = []; // 失败时重置为空
-      totalRecords.value = 0;
-    }
-      
+        console.warn('加载表记录失败:', response.msg);
+        records.value = []; // 失败时重置为空
+        totalRecords.value = 0;
+      }
+
       // 应用搜索
       applySearch();
     } catch (error) {
@@ -165,7 +169,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
       isLoading.value = false;
     }
   };
-  
+
   /**
    * 分页加载表记录
    */
@@ -174,19 +178,18 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     const s = size || pageSize.value;
     isLoading.value = true;
     try {
-      
-       const response = await DynamicTableApi.getRecordsByTableKeyWithPage(
-         currentTableKey.value, p, s
-       );
-       if (response.code === 200 && response.data) {
-      pagedRecords.value = response.data;
+
+      const response = await DynamicTableApi.getRecordsByTableKeyWithPage(currentTableKey.value, p, s);
+      console.log('分页加载表记录结果:', response);
+      if (response.code === 200 && response.data) {
+        pagedRecords.value = response.data;
         records.value = response.data.records || [];
-         currentPage.value = response.data.current  || 1;
+        currentPage.value = response.data.current || 1;
         pageSize.value = response.data.size || p;
-         totalRecords.value = response.data.total || s;
-       }
-    
-      
+        totalRecords.value = response.data.total || s;
+      }
+
+
       // 应用搜索 - 只有在有搜索关键词时才应用搜索
       if (searchKeyword.value.trim()) {
         applySearch();
@@ -197,30 +200,31 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
       isLoading.value = false;
     }
   };
-  
+
   /**
    * 设置当前操作的记录
    */
   const setCurrentRecord = (record: DynamicTableRecord | null) => {
     currentRecord.value = record ? { ...record, data: { ...record.data } } : null;
   };
-  
+
   /**
    * 保存记录（新增或更新）
    */
   const saveRecord = async (record: DynamicTableRecord) => {
     isLoading.value = true;
     try {
-     
-       const response = await DynamicTableApi.saveRecord(record);
-       if (response.code === 200 && response.data) {
-         await loadRecordsWithPage();
-         return true;
-       }
+
+      const response = await DynamicTableApi.saveRecord(record);
+      console.log('保存记录结果:', response);
+      if (response.code === 200 && response.data) {
+        await loadRecordsWithPage();
+        return true;
+      }
       else {
-      console.warn('保存记录失败:', response.msg);
-      return false;
-    }
+        console.warn('保存记录失败:', response.msg);
+        return false;
+      }
     } catch (error) {
       console.error('保存记录失败:', error);
     } finally {
@@ -228,24 +232,25 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     }
     return false;
   };
-  
+
   /**
    * 删除记录
    */
   const deleteRecord = async (id: number) => {
     isLoading.value = true;
     try {
-      
-       const response = await DynamicTableApi.deleteRecord(id);
-       if (response.code === 200 && response.data) {
-         await loadRecordsWithPage();
-         return true;
-       }
-      
+
+      const response = await DynamicTableApi.deleteRecord(id);
+      console.log('删除记录结果:', response);
+      if (response.code === 200 && response.data) {
+        await loadRecordsWithPage();
+        return true;
+      }
+
       else {
-      console.warn('删除记录失败:', response.msg);
-      return false;
-    }
+        console.warn('删除记录失败:', response.msg);
+        return false;
+      }
     } catch (error) {
       console.error('删除记录失败:', error);
     } finally {
@@ -253,20 +258,20 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     }
     return false;
   };
-  
+
   /**
    * 删除选中的记录
    */
   const deleteSelectedRecords = async () => {
     if (selectedIds.value.length === 0) return false;
-    
+
     isLoading.value = true;
     try {
       // 依次删除（实际环境可以考虑批量删除API）
       for (const id of selectedIds.value) {
         await deleteRecord(id);
       }
-      
+
       selectedIds.value = [];
       return true;
     } catch (error) {
@@ -276,7 +281,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     }
     return false;
   };
-  
+
   /**
    * 切换记录选择状态
    */
@@ -288,7 +293,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
       selectedIds.value.push(id);
     }
   };
-  
+
   /**
    * 设置搜索条件
    */
@@ -298,7 +303,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     currentPage.value = 1; // 重置到第一页
     applySearch();
   };
-  
+
   /**
    * 应用搜索
    */
@@ -308,34 +313,36 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
       await loadRecordsWithPage();
       return;
     }
-    
+
     isLoading.value = true;
     try {
       const keyword = searchKeyword.value.trim();
       const field = searchField.value;
-      
+
       if (field) {
-      
-         const response = await DynamicTableApi.searchByFieldAndKeyword(
-           currentTableKey.value, field, keyword
+
+        const response = await DynamicTableApi.searchByFieldAndKeyword(
+          currentTableKey.value, field, keyword
         );
-         if (response.code === 200 && response.data) {
-           records.value = response.data;
-           totalRecords.value = response.data.length;
-         }
-        
+        console.log('按字段搜索结果:', response);
+        if (response.code === 200 && response.data) {
+          records.value = response.data;
+          totalRecords.value = response.data.length;
+        }
+
       } else {
         // 搜索所有字段
         // 在实际环境中使用API
-         const response = await DynamicTableApi.searchByKeyword(
-           currentTableKey.value, keyword
-         );
-         if (response.code === 200 && response.data) {
-           records.value = response.data;
-           totalRecords.value = response.data.length;
-         }
+        const response = await DynamicTableApi.searchByKeyword(
+          currentTableKey.value, keyword
+        );
+        console.log('全局搜索结果:', response);
+        if (response.code === 200 && response.data) {
+          records.value = response.data;
+          totalRecords.value = response.data.length;
+        }
       }
-      
+
       // 重新分页
       const startIndex = 0;
       const endIndex = pageSize.value;
@@ -346,7 +353,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
       isLoading.value = false;
     }
   };
-  
+
   /**
    * 初始化表数据
    */
@@ -357,7 +364,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
       loadRecordsWithPage()
     ]);
   };
-  
+
   // 暴露状态和方法
   return {
     // 状态
@@ -375,7 +382,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     currentPage,
     pageSize,
     totalRecords,
-    
+
     // 方法
     setCurrentTableKey,
     resetState,

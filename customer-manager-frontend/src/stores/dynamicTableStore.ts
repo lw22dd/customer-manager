@@ -188,8 +188,6 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
         pageSize.value = response.data.size || p;
         totalRecords.value = response.data.total || s;
       }
-
-
       // 应用搜索 - 只有在有搜索关键词时才应用搜索
       if (searchKeyword.value.trim()) {
         applySearch();

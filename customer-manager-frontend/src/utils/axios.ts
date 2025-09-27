@@ -3,7 +3,7 @@ import axios from "axios";
 
 const serverConfig = {
   baseURL: "http://localhost:8080", // 请求基础地址,可根据环境自定义
-  useTokenAuthorization: false, // 开启 token 认证
+  useTokenAuthorization: true, // 开启 token 认证
 };
 
 // 创建 axios 请求实例

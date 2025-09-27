@@ -43,7 +43,6 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   });
 
   // 方法定义
-
   /**
    * 设置当前表
    */
@@ -79,11 +78,11 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
       console.log('获取表字段元数据结果:', response);
       if (response.code === 200 && response.data) {
         metadataList.value = response.data;
+        console.log('表字段元数据:', metadataList.value);
       } else {
         console.warn('加载元数据失败:', response.msg);
         metadataList.value = []; // 失败时重置为空
       }
-
     } catch (error) {
       console.error('加载表字段元数据失败:', error);
       metadataList.value = [];
@@ -160,7 +159,6 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
         records.value = []; // 失败时重置为空
         totalRecords.value = 0;
       }
-
       // 应用搜索
       applySearch();
     } catch (error) {
@@ -178,15 +176,15 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     const s = size || pageSize.value;
     isLoading.value = true;
     try {
-
       const response = await DynamicTableApi.getRecordsByTableKeyWithPage(currentTableKey.value, p, s);
-      console.log('分页加载表记录结果:', response);
+      console.log('分页加载表记录结果:', response.data);
       if (response.code === 200 && response.data) {
         pagedRecords.value = response.data;
-        records.value = response.data.records || [];
+        records.value = response.data.items || [];
         currentPage.value = response.data.current || 1;
         pageSize.value = response.data.size || p;
         totalRecords.value = response.data.total || s;
+      
       }
       // 应用搜索 - 只有在有搜索关键词时才应用搜索
       if (searchKeyword.value.trim()) {
@@ -340,7 +338,6 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
           totalRecords.value = response.data.length;
         }
       }
-
       // 重新分页
       const startIndex = 0;
       const endIndex = pageSize.value;

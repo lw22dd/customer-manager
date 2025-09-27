@@ -7,7 +7,7 @@ type Result<T> = {
 
 // 分页结果接口
 interface PagingResult<T> {
-    records: T[];
+    items: T[];
     total: number;
     size: number;
     current: number;

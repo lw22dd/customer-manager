@@ -5,10 +5,10 @@
       <div class="search-input-group">
         <select v-model="searchField" class="search-field">
           <option value="">所有字段</option>
-          <option v-for="field in sortedMetadata" :key="field.fieldName" :value="field.fieldName">
+          <option v-for="field in sortedMetadata" :key="field.fieldName" >
             {{ field.fieldLabel }}
           </option>
-        </select>
+        </select> 
         <input 
           type="text" 
           v-model="searchKeyword" 

@@ -32,6 +32,3 @@ INSERT INTO dynamic_table_metadata (
 INSERT INTO dynamic_table_record (table_key, data) VALUES
 ('customer', '{"name":"张三","phone":"13800138000","address":"北京市朝阳区","idCard":"110101199001011234","birthday":"1990-01-01","height":175.5,"weight":65.0,"shoeSize":"42","clothesSize":"L","athleteLevel":"一级运动员","refereeLevel":null,"familyHeritage":"无"}'),
 ('customer', '{"name":"李四","phone":"13900139000","address":"上海市浦东新区","idCard":"310101199202021234","birthday":"1992-02-02","height":168.0,"weight":55.5,"shoeSize":"38","clothesSize":"M","athleteLevel":null,"refereeLevel":"一级裁判员","familyHeritage":"祖父是武术教练"}');
--- 插入测试数据
-INSERT INTO dynamic_table_record (table_key, data) VALUES
-('customer', '{"name":"兰梧坤玉","phone":"13800138001","address":"北京市海淀区","idCard":"110101199009271234","birthday":"1990-09-27","height":170.0,"weight":60.0,"shoeSize":"40","clothesSize":"M","athleteLevel":"二级运动员","refereeLevel":null,"familyHeritage":"无"}');

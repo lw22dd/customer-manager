@@ -33,4 +33,9 @@ public interface EmailService {
      * @param emailRequest 邮件请求对象
      */
     void sendEmail(EmailRequest emailRequest);
+    
+    /**
+     * 检查今日生日的客户并发送提醒邮件给用户
+     */
+    void checkBirthdaysAndSendEmails();
 }

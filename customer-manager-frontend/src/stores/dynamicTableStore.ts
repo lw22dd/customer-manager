@@ -3,48 +3,9 @@ import { ref, computed } from 'vue';
 import type { DynamicTableMetadata } from '../models/DynamicTableMetadata';
 import type { DynamicTableRecord } from '../models/DynamicTableRecord';
 import type { PagingResult } from '../models/Result';
+import DynamicTableApi from '@/apis/dynamicTableApi';
 
-// 模拟API（开发环境使用）
-const mockApi = {
-  // 模拟元数据
-  mockMetadata: [
-    { id: 1, tableKey: 'customer', fieldName: 'name', fieldLabel: '姓名', fieldType: 'text', required: true, sortOrder: 1 },
-    { id: 2, tableKey: 'customer', fieldName: 'phone', fieldLabel: '电话', fieldType: 'text', required: true, sortOrder: 2 },
-    { id: 3, tableKey: 'customer', fieldName: 'address', fieldLabel: '地址', fieldType: 'text', required: false, sortOrder: 3 },
-    { id: 4, tableKey: 'customer', fieldName: 'email', fieldLabel: '邮箱', fieldType: 'text', required: false, sortOrder: 4 },
-    { id: 5, tableKey: 'customer', fieldName: 'birthday', fieldLabel: '生日', fieldType: 'date', required: false, sortOrder: 5 }
-  ] as DynamicTableMetadata[],
-  
-  // 模拟记录数据
-  mockRecords: [
-    {
-      id: 1,
-      tableKey: 'customer',
-      data: {
-        name: '张三',
-        phone: '13800138000',
-        address: '北京市朝阳区建国路88号',
-        email: 'zhangsan@example.com',
-        birthday: '1990-01-01'
-      } as Record<string, any>,
-      createTime: '2024-01-01 10:00:00',
-      updateTime: '2024-01-01 10:00:00'
-    },
-    {
-      id: 2,
-      tableKey: 'customer',
-      data: {
-        name: '李四',
-        phone: '13900139000',
-        address: '上海市浦东新区张江高科技园区',
-        email: 'lisi@example.com',
-        birthday: '1995-05-05'
-      },
-      createTime: '2024-01-02 11:00:00',
-      updateTime: '2024-01-02 11:00:00'
-    }
-  ]
-};
+
 
 export const useDynamicTableStore = defineStore('dynamicTable', () => {
   // 状态定义
@@ -114,16 +75,17 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     const key = tableKey || currentTableKey.value;
     isLoading.value = true;
     try {
-      // 在实际环境中使用API，这里使用模拟数据
-      // const response = await DynamicTableApi.getFieldMetadataByTableKey(key);
-      // if (response.code === 200 && response.data) {
-      //   metadataList.value = response.data;
-      // }
-      
-      // 开发环境使用模拟数据
-      metadataList.value = mockApi.mockMetadata.filter(item => item.tableKey === key);
+       const response = await DynamicTableApi.getFieldMetadataByTableKey(key);
+       if (response.code === 200 && response.data) {
+        metadataList.value = response.data;
+       }else {
+      console.warn('加载元数据失败:', response.msg);
+      metadataList.value = []; // 失败时重置为空
+    }
+    
     } catch (error) {
       console.error('加载表字段元数据失败:', error);
+      metadataList.value = [];
     } finally {
       isLoading.value = false;
     }
@@ -135,32 +97,15 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   const saveMetadata = async (metadata: DynamicTableMetadata) => {
     isLoading.value = true;
     try {
-      // 在实际环境中使用API
-      // const response = await DynamicTableApi.saveFieldMetadata(metadata);
-      // if (response.code === 200 && response.data) {
-      //   await loadMetadata();
-      //   return true;
-      // }
+       const response = await DynamicTableApi.saveFieldMetadata(metadata);
+     if (response.code === 200 && response.data) {
+         await loadMetadata();
+         return true;
+       }else {
+      console.warn('保存元数据失败:', response.msg);
+      return false;
+    }
       
-      // 开发环境使用模拟数据
-      if (metadata.id) {
-        // 更新
-        const index = mockApi.mockMetadata.findIndex(item => item.id === metadata.id);
-        if (index > -1) {
-          mockApi.mockMetadata[index] = { ...metadata };
-        }
-      } else {
-        // 开发环境使用模拟数据
-        const newMetadata = {
-          ...metadata,
-          id: Date.now(),
-          tableKey: currentTableKey.value,
-          sortOrder: metadata.sortOrder || 999
-        };
-        mockApi.mockMetadata.push(newMetadata);
-      }
-      await loadMetadata();
-      return true;
     } catch (error) {
       console.error('保存表字段元数据失败:', error);
     } finally {
@@ -175,17 +120,16 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   const deleteMetadata = async (id: number) => {
     isLoading.value = true;
     try {
-      // 在实际环境中使用API
-      // const response = await DynamicTableApi.deleteFieldMetadata(id);
-      // if (response.code === 200 && response.data) {
-      //   await loadMetadata();
-      //   return true;
-      // }
-      
-      // 开发环境使用模拟数据
-      mockApi.mockMetadata = mockApi.mockMetadata.filter(item => item.id !== id);
-      await loadMetadata();
-      return true;
+     
+       const response = await DynamicTableApi.deleteFieldMetadata(id);
+       if (response.code === 200 && response.data) {
+         await loadMetadata();
+         return true;
+       }
+      else {
+      console.warn('删除元数据失败:', response.msg);
+      return false;
+    }
     } catch (error) {
       console.error('删除表字段元数据失败:', error);
     } finally {
@@ -201,16 +145,17 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     const key = tableKey || currentTableKey.value;
     isLoading.value = true;
     try {
-      // 在实际环境中使用API
-      // const response = await DynamicTableApi.getRecordsByTableKey(key);
-      // if (response.code === 200 && response.data) {
-      //   records.value = response.data;
-      //   totalRecords.value = response.data.length;
-      // }
       
-      // 开发环境使用模拟数据
-      records.value = mockApi.mockRecords.filter(item => item.tableKey === key);
-      totalRecords.value = records.value.length;
+       const response = await DynamicTableApi.getRecordsByTableKey(key);
+       if (response.code === 200 && response.data) {
+         records.value = response.data;
+         totalRecords.value = response.data.length;
+       }
+      else {
+      console.warn('加载表记录失败:', response.msg);
+      records.value = []; // 失败时重置为空
+      totalRecords.value = 0;
+    }
       
       // 应用搜索
       applySearch();
@@ -229,27 +174,18 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     const s = size || pageSize.value;
     isLoading.value = true;
     try {
-      // 在实际环境中使用API
-      // const response = await DynamicTableApi.getRecordsByTableKeyWithPage(
-      //   currentTableKey.value, p, s
-      // );
-      // if (response.code === 200 && response.data) {
-      //   pagedRecords.value = response.data;
-      //   records.value = response.data.records;
-      //   currentPage.value = response.data.current;
-      //   pageSize.value = response.data.size;
-      //   totalRecords.value = response.data.total;
-      // }
       
-      // 开发环境使用模拟数据
-      const allRecords = mockApi.mockRecords.filter(item => item.tableKey === currentTableKey.value);
-      const startIndex = (p - 1) * s;
-      const endIndex = startIndex + s;
-      
-      records.value = allRecords.slice(startIndex, endIndex);
-      totalRecords.value = allRecords.length;
-      currentPage.value = p;
-      pageSize.value = s;
+       const response = await DynamicTableApi.getRecordsByTableKeyWithPage(
+         currentTableKey.value, p, s
+       );
+       if (response.code === 200 && response.data) {
+      pagedRecords.value = response.data;
+        records.value = response.data.records || [];
+         currentPage.value = response.data.current  || 1;
+        pageSize.value = response.data.size || p;
+         totalRecords.value = response.data.total || s;
+       }
+    
       
       // 应用搜索 - 只有在有搜索关键词时才应用搜索
       if (searchKeyword.value.trim()) {
@@ -275,36 +211,16 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   const saveRecord = async (record: DynamicTableRecord) => {
     isLoading.value = true;
     try {
-      // 在实际环境中使用API
-      // const response = await DynamicTableApi.saveRecord(record);
-      // if (response.code === 200 && response.data) {
-      //   await loadRecordsWithPage();
-      //   return true;
-      // }
-      
-      // 开发环境使用模拟数据
-      const newRecord = {
-        ...record,
-        tableKey: currentTableKey.value,
-        createTime: record.createTime || new Date().toLocaleString('zh-CN'),
-        updateTime: new Date().toLocaleString('zh-CN')
-      };
-      
-      if (record.id) {
-        // 更新
-        const index = mockApi.mockRecords.findIndex(item => item.id === record.id);
-        if (index > -1) {
-          // 确保id有值
-          mockApi.mockRecords[index] = { ...newRecord, id: record.id };
-        }
-      } else {
-        // 添加
-        newRecord.id = Date.now();
-        mockApi.mockRecords.push(newRecord as any);
-      }
-      
-      await loadRecordsWithPage();
-      return true;
+     
+       const response = await DynamicTableApi.saveRecord(record);
+       if (response.code === 200 && response.data) {
+         await loadRecordsWithPage();
+         return true;
+       }
+      else {
+      console.warn('保存记录失败:', response.msg);
+      return false;
+    }
     } catch (error) {
       console.error('保存记录失败:', error);
     } finally {
@@ -319,17 +235,17 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   const deleteRecord = async (id: number) => {
     isLoading.value = true;
     try {
-      // 在实际环境中使用API
-      // const response = await DynamicTableApi.deleteRecord(id);
-      // if (response.code === 200 && response.data) {
-      //   await loadRecordsWithPage();
-      //   return true;
-      // }
       
-      // 开发环境使用模拟数据
-      mockApi.mockRecords = mockApi.mockRecords.filter(item => item.id !== id);
-      await loadRecordsWithPage();
-      return true;
+       const response = await DynamicTableApi.deleteRecord(id);
+       if (response.code === 200 && response.data) {
+         await loadRecordsWithPage();
+         return true;
+       }
+      
+      else {
+      console.warn('删除记录失败:', response.msg);
+      return false;
+    }
     } catch (error) {
       console.error('删除记录失败:', error);
     } finally {
@@ -399,45 +315,25 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
       const field = searchField.value;
       
       if (field) {
-        // 搜索指定字段
-        // 在实际环境中使用API
-        // const response = await DynamicTableApi.searchByFieldAndKeyword(
-        //   currentTableKey.value, field, keyword
-        // );
-        // if (response.code === 200 && response.data) {
-        //   records.value = response.data;
-        //   totalRecords.value = response.data.length;
-        // }
+      
+         const response = await DynamicTableApi.searchByFieldAndKeyword(
+           currentTableKey.value, field, keyword
+        );
+         if (response.code === 200 && response.data) {
+           records.value = response.data;
+           totalRecords.value = response.data.length;
+         }
         
-        // 开发环境使用模拟数据
-        const allRecords = mockApi.mockRecords.filter(item => item.tableKey === currentTableKey.value);
-        records.value = allRecords.filter(record => {
-          const data = record.data as Record<string, any>;
-          return data[field] && 
-                 String(data[field]).toLowerCase().includes(keyword.toLowerCase());
-        });
-        totalRecords.value = records.value.length;
       } else {
         // 搜索所有字段
         // 在实际环境中使用API
-        // const response = await DynamicTableApi.searchByKeyword(
-        //   currentTableKey.value, keyword
-        // );
-        // if (response.code === 200 && response.data) {
-        //   records.value = response.data;
-        //   totalRecords.value = response.data.length;
-        // }
-        
-        // 开发环境使用模拟数据
-        const allRecords = mockApi.mockRecords.filter(item => item.tableKey === currentTableKey.value);
-        records.value = allRecords.filter(record => {
-          const values = Object.values(record.data);
-          return values.some(value => 
-            value && 
-            String(value).toLowerCase().includes(keyword.toLowerCase())
-          );
-        });
-        totalRecords.value = records.value.length;
+         const response = await DynamicTableApi.searchByKeyword(
+           currentTableKey.value, keyword
+         );
+         if (response.code === 200 && response.data) {
+           records.value = response.data;
+           totalRecords.value = response.data.length;
+         }
       }
       
       // 重新分页

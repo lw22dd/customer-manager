@@ -22,6 +22,8 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   const pageSize = ref<number>(10); // 每页条数
   const totalRecords = ref<number>(0); // 总记录数
 
+
+
   // 计算属性
   const sortedMetadata = computed(() => {
     return metadataList.value && metadataList.value.length > 0
@@ -176,6 +178,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     const s = size || pageSize.value;
     isLoading.value = true;
     try {
+    
       const response = await DynamicTableApi.getRecordsByTableKeyWithPage(currentTableKey.value, p, s);
       console.log('分页加载表记录结果:', response.data);
       if (response.code === 200 && response.data) {
@@ -184,7 +187,9 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
         currentPage.value = response.data.current || 1;
         pageSize.value = response.data.size || p;
         totalRecords.value = response.data.total || s;
-      
+
+        console.log('加载完成：records长度=', records.value.length, '后端返回的records长度=', response.data.items.length);
+
       }
       // 应用搜索 - 只有在有搜索关键词时才应用搜索
       if (searchKeyword.value.trim()) {
@@ -210,11 +215,14 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   const saveRecord = async (record: DynamicTableRecord) => {
     isLoading.value = true;
     try {
-
       const response = await DynamicTableApi.saveRecord(record);
       console.log('保存记录结果:', response);
       if (response.code === 200 && response.data) {
-        await loadRecordsWithPage();
+
+        const defaultPageSize = 10; // 默认每页显示10条数据
+        pageSize.value = defaultPageSize;
+        await loadRecordsWithPage(1, defaultPageSize);
+
         return true;
       }
       else {
@@ -239,7 +247,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
       const response = await DynamicTableApi.deleteRecord(id);
       console.log('删除记录结果:', response);
       if (response.code === 200 && response.data) {
-        await loadRecordsWithPage();
+        await loadRecordsWithPage(currentPage.value, 10);
         return true;
       }
 
@@ -356,7 +364,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     setCurrentTableKey(tableKey);
     await Promise.all([
       loadMetadata(),
-      loadRecordsWithPage()
+      loadRecordsWithPage(1, 10)
     ]);
   };
 

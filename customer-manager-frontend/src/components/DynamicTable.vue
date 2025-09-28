@@ -672,7 +672,7 @@ onMounted(() => {
 
 .btn-edit, .btn-delete {
   padding: 4px 12px;
-  margin: 0 4px;
+  margin: 2px 4px;
   border: 1px solid #d9d9d9;
   background: white;
   border-radius: 4px;

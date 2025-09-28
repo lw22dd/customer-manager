@@ -1,5 +1,5 @@
 <template>
-  <div class="float-right p-4 flex justify-between items-center mb-6 fixed top-0 right-0">
+  <div class="float-right p-4 flex justify-between items-center mb-6 top-0 right-0">
     <div class="user-info">
       <span>Admin</span>
       <button @click="handleLogout"
@@ -64,7 +64,6 @@ import UserApi from '../apis/userApi.ts';
 // 当前激活的选项卡
 const activeTab = ref('data');
 const router = useRouter();
-const userName = ref('Admin');
 
 
 // 退出登录函数

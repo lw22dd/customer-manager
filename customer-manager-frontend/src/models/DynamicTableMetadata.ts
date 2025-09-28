@@ -11,4 +11,8 @@ export interface DynamicTableMetadata {
   options?: string;        // 下拉框选项(JSON格式)
   sortOrder?: number;      // 显示顺序
   defaultValue?: string;   // 默认值
+  maxLength?: number;      // 最大长度限制
+  min?: number;   // 添加这一行
+  max?: number;   // 可一并添加
+  decimalPlaces?: number;
 }

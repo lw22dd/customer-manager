@@ -1,4 +1,5 @@
 declare module "element-plus";
+declare module 'element-plus/dist/locale/zh-cn.mjs';
 /* eslint-disable */
 declare module '*.vue' {
     import type { DefineComponent } from 'vue';

@@ -185,8 +185,8 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
         pagedRecords.value = response.data;
         records.value = response.data.items || [];
         currentPage.value = response.data.current || 1;
-        pageSize.value = response.data.size || p;
-        totalRecords.value = response.data.total || s;
+        pageSize.value = response.data.size || s;
+        totalRecords.value = response.data.totalCount || records.value.length;
 
         console.log('加载完成：records长度=', records.value.length, '后端返回的records长度=', response.data.items.length);
 
@@ -306,25 +306,27 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     searchField.value = field;
     currentPage.value = 1; // 重置到第一页
     applySearch();
+
   };
 
-  /**
+/**
    * 应用搜索
    */
   const applySearch = async () => {
+
+    currentPage.value = 1;
     if (!searchKeyword.value.trim()) {
       // 如果没有搜索关键词，加载所有记录
-      await loadRecordsWithPage();
+      console.log('空关键词搜索，加载全量数据');
+      await loadRecordsWithPage(1,10);
       return;
     }
-
     isLoading.value = true;
     try {
-      const keyword = searchKeyword.value.trim();
+      const keyword = searchKeyword.value.trim(); 
       const field = searchField.value;
 
       if (field) {
-
         const response = await DynamicTableApi.searchByFieldAndKeyword(
           currentTableKey.value, field, keyword
         );
@@ -336,7 +338,6 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
 
       } else {
         // 搜索所有字段
-        // 在实际环境中使用API
         const response = await DynamicTableApi.searchByKeyword(
           currentTableKey.value, keyword
         );
@@ -356,7 +357,6 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
       isLoading.value = false;
     }
   };
-
   /**
    * 初始化表数据
    */

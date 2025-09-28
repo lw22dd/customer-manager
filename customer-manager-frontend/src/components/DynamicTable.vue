@@ -5,7 +5,7 @@
       <div class="search-input-group">
         <select v-model="searchField" class="search-field">
           <option value="">所有字段</option>
-          <option v-for="field in sortedMetadata" :key="field.fieldName" >
+          <option v-for="field in sortedMetadata" :key="field.fieldName" :value="field.fieldName" >
             {{ field.fieldLabel }}
           </option>
         </select> 
@@ -34,7 +34,7 @@
                 :disabled="records.length === 0"
               />
             </th>
-            <th v-for="field in sortedMetadata" :key="field.fieldName">
+            <th v-for="field in sortedMetadata" :key="field.fieldName" >
               {{ field.fieldLabel }}
               <span v-if="field.required" class="required-mark">*</span>
             </th>
@@ -380,7 +380,6 @@ const search = () => {
   isSearching.value = true;
   store.setSearchParams(searchKeyword.value, searchField.value);
 };
-
 /**
  * 重置搜索
  */

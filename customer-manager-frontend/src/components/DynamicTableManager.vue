@@ -288,6 +288,8 @@ const saveMetadata = async () => {
     }
   }
   
+  // 为formData添加tableKey字段
+  formData.tableKey = "customer";
   // 保存
   const result = await store.saveMetadata(formData as DynamicTableMetadata);
   if (result) {

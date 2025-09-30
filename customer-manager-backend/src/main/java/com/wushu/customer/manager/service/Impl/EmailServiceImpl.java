@@ -112,32 +112,32 @@ public class EmailServiceImpl implements EmailService {
     }
     
     @Override
-    @Scheduled(cron = "0 0 1 * * ?") // 每天凌晨1点执行
+    @Scheduled(cron = "0 0 12 * * ?") // 每天中午12点执行
     public void checkBirthdaysAndSendEmails() {
         // 获取所有用户
         List<User> users = userService.getAllUsers();
-        
+
         // 获取客户表的所有字段元数据
         List<DynamicTableMetadata> metadataList = dynamicTableService.getFieldMetadataByTableKey("customer");
-        
+
         // 查找生日字段
         DynamicTableMetadata birthdayField = metadataList.stream()
                 .filter(metadata -> "birthday".equals(metadata.getFieldName()))
                 .findFirst()
                 .orElse(null);
-        
+
         if (birthdayField == null) {
             // 如果没有生日字段，直接返回
             return;
         }
-        
-        // 获取今天日期 (格式: MM-dd)
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("MM-dd"));
-        
+
+        // 获取3天后的日期 (格式: MM-dd)
+        String targetDate = LocalDate.now().plusDays(3).format(DateTimeFormatter.ofPattern("MM-dd"));
+
         // 获取所有客户记录
         List<DynamicTableRecord> customerRecords = dynamicTableService.getRecordsByTableKey("customer");
-        
-        // 筛选出今天生日的客户
+
+        // 筛选出3天后生日的客户
         List<DynamicTableRecord> birthdayCustomers = customerRecords.stream()
                 .filter(record -> {
                     Map<String, Object> data = record.getData();
@@ -147,9 +147,9 @@ public class EmailServiceImpl implements EmailService {
                         // 支持两种日期格式: yyyy-MM-dd 和 MM-dd
                         if (birthday.length() >= 5) {
                             // 提取月日部分进行比较
-                            String birthdayMMdd = birthday.length() == 10 ? 
-                                birthday.substring(5) : birthday.substring(0, 5);
-                            return today.equals(birthdayMMdd);
+                            String birthdayMMdd = birthday.length() == 10 ?
+                                    birthday.substring(5) : birthday.substring(0, 5);
+                            return targetDate.equals(birthdayMMdd);
                         }
                     }
                     return false;

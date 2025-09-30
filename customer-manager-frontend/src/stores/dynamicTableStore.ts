@@ -178,7 +178,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     const s = size || pageSize.value;
     isLoading.value = true;
     try {
-    
+
       const response = await DynamicTableApi.getRecordsByTableKeyWithPage(currentTableKey.value, p, s);
       console.log('分页加载表记录结果:', response.data);
       if (response.code === 200 && response.data) {
@@ -212,9 +212,37 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   /**
    * 保存记录（新增或更新）
    */
-  const saveRecord = async (record: DynamicTableRecord) => {
+  const saveRecord = async (record: DynamicTableRecord): Promise<{ success: boolean; reason?: string; message?: string }> => {
     isLoading.value = true;
     try {
+      // 检查姓名重复（排除当前编辑的记录）
+      const searchResponseByName = await DynamicTableApi.searchByFieldAndKeyword(currentTableKey.value, 'name', record.data.name);
+      console.log('名称搜索结果:', searchResponseByName);
+      console.log('搜索结果长度:', searchResponseByName.data?.length);
+      if (searchResponseByName.code === 200 && searchResponseByName.data && searchResponseByName.data.length > 0) {
+        // 过滤掉当前编辑的记录
+        const otherRecords = searchResponseByName.data.filter((r: DynamicTableRecord) => r.id !== record.id);
+        console.log('其他匹配记录数量:', otherRecords.length);
+        
+        if (otherRecords.length > 0) {
+          console.warn('名称已存在:', record.data.name);
+          return { success: false, reason: 'nameDuplicate' };
+        }
+      }
+      
+      // 检查手机号重复（排除当前编辑的记录）
+      const searchResponseByPhone = await DynamicTableApi.searchByFieldAndKeyword(currentTableKey.value, 'phone', record.data.phone);
+      console.log('手机号搜索结果:', searchResponseByPhone);
+      if (searchResponseByPhone.code === 200 && searchResponseByPhone.data && searchResponseByPhone.data.length > 0) {
+        // 过滤掉当前编辑的记录
+        const otherRecords = searchResponseByPhone.data.filter((r: DynamicTableRecord) => r.id !== record.id);
+        
+        if (otherRecords.length > 0) {
+          console.warn('手机号已存在:', record.data.phone);
+          return { success: false, reason: 'phoneDuplicate' };
+        }
+      }
+
       const response = await DynamicTableApi.saveRecord(record);
       console.log('保存记录结果:', response);
       if (response.code === 200 && response.data) {
@@ -223,18 +251,18 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
         pageSize.value = defaultPageSize;
         await loadRecordsWithPage(1, defaultPageSize);
 
-        return true;
+        return { success: true };
       }
       else {
         console.warn('保存记录失败:', response.msg);
-        return false;
+        return { success: false, reason: 'saveFailed', message: response.msg };
       }
     } catch (error) {
       console.error('保存记录失败:', error);
+      return { success: false, reason: 'systemError', message: error instanceof Error ? error.message : '系统错误' };
     } finally {
       isLoading.value = false;
     }
-    return false;
   };
 
   /**
@@ -309,21 +337,21 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
 
   };
 
-/**
-   * 应用搜索
-   */
+  /**
+     * 应用搜索
+     */
   const applySearch = async () => {
 
     currentPage.value = 1;
     if (!searchKeyword.value.trim()) {
       // 如果没有搜索关键词，加载所有记录
       console.log('空关键词搜索，加载全量数据');
-      await loadRecordsWithPage(1,10);
+      await loadRecordsWithPage(1, 10);
       return;
     }
     isLoading.value = true;
     try {
-      const keyword = searchKeyword.value.trim(); 
+      const keyword = searchKeyword.value.trim();
       const field = searchField.value;
 
       if (field) {

@@ -411,10 +411,19 @@ const saveRecord = async () => {
 
   // 保存
   const result = await store.saveRecord(record);
-  if (result) {
+  if (result.success) {
+    // 成功保存，关闭模态框
     closeModal();
   } else {
-    alert('保存失败，请重试');
+    // 失败情况，根据原因显示不同提示
+    if (result.reason === 'nameDuplicate') {
+      alert('名称已存在');
+    } else if (result.reason === 'phoneDuplicate') {
+      alert('手机号已存在');
+    } else {
+      // 其他失败情况
+      alert(result.message || '保存失败，请重试');
+    }
   }
 };
 

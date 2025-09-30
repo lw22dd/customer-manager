@@ -73,7 +73,7 @@
                 pattern="^[a-zA-Z_][a-zA-Z0-9_]*$"
                 title="字段名只能包含字母、数字和下划线，且不能以数字开头"
               />
-              <small>只能包含字母、数字和下划线，且不能以数字开头</small>
+              <small>本字段的英文名，只能包含字母、数字和下划线，且不能以数字开头</small>
             </div>
             <div class="form-group">
               <label>字段类型 *</label>
@@ -121,15 +121,7 @@
                 必填字段
               </label>
             </div>
-            <div class="form-group">
-              <label>验证正则（可选）</label>
-              <input 
-                type="text" 
-                v-model="formData.regex" 
-                placeholder="例如：^1[3-9]\\d{9}$"
-              />
-              <small>用于字段内容的格式验证</small>
-            </div>
+            
             <div class="form-group">
               <label>显示顺序</label>
               <input 

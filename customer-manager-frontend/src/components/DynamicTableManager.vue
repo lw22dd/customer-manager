@@ -15,7 +15,9 @@
       <div v-if="store.sortedMetadata.length === 0" class="empty-state">
         暂无字段，请点击"新增字段"添加
       </div>
-      <div class="metadata-item" v-for="item in store.sortedMetadata" :key="item.id">
+      <div class="metadata-item" v-for="item in store.sortedMetadata" :key="item.id" 
+      :class="{ 'duplicate-sort': item.sortOrder !== undefined && repeatSortOrder.includes(item.sortOrder) }"
+      :title="(item.sortOrder !== undefined && repeatSortOrder.includes(item.sortOrder)) ? '显示顺序冲突，请修改' : ''">
         <div class="metadata-info">
           <div class="field-label">{{ item.fieldLabel }}</div>
           <div class="field-detail">
@@ -112,14 +114,12 @@
                 placeholder="设置默认值"
               />
             </div>
-            <div class="form-group">
-              <label class="checkbox-label">
-                <input 
+            <div class="form-group check-box">
+              <label>必填字段</label>
+              <input 
                   type="checkbox" 
                   v-model="formData.required"
-                />
-                必填字段
-              </label>
+              />
             </div>
             
             <div class="form-group">
@@ -161,7 +161,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { useDynamicTableStore } from '../stores/dynamicTableStore';
 import type { DynamicTableMetadata } from '../models/DynamicTableMetadata';
 
@@ -175,6 +175,21 @@ const deleteMetadataItem = ref<DynamicTableMetadata | null>(null);
 const isDragging = ref(false);
 const draggedItem = ref<DynamicTableMetadata | null>(null);
 const isLoading = ref(false);
+
+//计算重复排序号
+const repeatSortOrder = computed(() => {
+  const sortCount : Record<string, number> = {};
+  store.sortedMetadata.forEach(item => {
+    if (item.sortOrder) { 
+      const order = item.sortOrder;
+      sortCount[order] = (sortCount[order] || 0) + 1;
+    }
+  });
+  // 筛选出出现次数 > 1 的排序号
+  return Object.keys(sortCount)
+    .map(Number)
+    .filter(order => sortCount[order] > 1);
+});
 
 // 表单数据
 const formData = reactive<Partial<DynamicTableMetadata>>({
@@ -623,12 +638,7 @@ store.loadMetadata();
   font-size: 12px;
 }
 
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
+
 
 .form-actions {
   display: flex;
@@ -674,5 +684,22 @@ store.loadMetadata();
 .warning {
   color: #ff4d4f;
   font-size: 12px;
+}
+.check-box {
+display: flex;
+align-items: center;
+gap: 8px;
+cursor: pointer;
+width: fit-content;
+margin-bottom: 4px;
+}
+.metadata-item.duplicate-sort {
+  border-color: #ff4d4f; /* 边框标红 */
+}
+.metadata-item.duplicate-sort .field-label {
+  color: #ff4d4f; /* 字段标签文字标红 */
+}
+.metadata-item.duplicate-sort:hover {
+  background: #fff2f0; /* hover 时背景色提示 */
 }
 </style>

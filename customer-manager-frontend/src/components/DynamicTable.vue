@@ -15,21 +15,21 @@
             </el-col>
             <el-card class="search-panel" shadow="hover" :body-style="{ padding: '16px' }">
               <el-col :xs="24" :sm="16">
-              <el-input v-model="searchKeyword" placeholder="请输入搜索关键词" class="search-input" @keyup.enter="search"
-                :suffix-icon="Search" />
-            </el-col>
-            <el-col :xs="12" :sm="6" class="mt-2 sm:mt-0">
-              <el-button type="primary" @click="search" class="w-full*20% search-button">
-                搜索
-              </el-button>
-            </el-col>
-            <el-col v-if="searchKeyword" :xs="12" :sm="6" class="mt-2 sm:mt-0">
-              <el-button @click="resetSearch" class="w-full">
-                重置
-              </el-button>
-            </el-col>
+                <el-input v-model="searchKeyword" placeholder="请输入搜索关键词" class="search-input" @keyup.enter="search"
+                  :suffix-icon="Search" />
+              </el-col>
+              <el-col :xs="12" :sm="6" class="mt-2 sm:mt-0">
+                <el-button type="primary" @click="search" class="w-full*20% search-button">
+                  搜索
+                </el-button>
+              </el-col>
+              <el-col v-if="searchKeyword" :xs="12" :sm="6" class="mt-2 sm:mt-0">
+                <el-button @click="resetSearch" class="w-full">
+                  重置
+                </el-button>
+              </el-col>
             </el-card>
-            
+
           </el-row>
         </el-col>
         <el-col :lg="8" :xs="24" class="mt-2 lg:mt-0">
@@ -54,15 +54,18 @@
         <el-table-column prop="data.phone" label="电话*" :show-overflow-tooltip="true" header-align="left" />
         <el-table-column label="操作" width="120" fixed="right">
           <template #default="scope">
-            <el-button type="success" size="small" @click="viewRecord(scope.row)" style="margin-right: 5px">
-              查看
-            </el-button>
-            <el-button type="primary" size="small" @click="editRecord(scope.row)" style="margin-right: 5px">
-              编辑
-            </el-button>
-            <el-button type="danger" size="small" @click="showDeleteConfirm(scope.row)">
-              删除
-            </el-button>
+            <div class="action-buttons">
+              <el-button type="success" size="small" @click="viewRecord(scope.row)">
+                查看
+              </el-button>
+              <el-button type="primary" size="small" @click="editRecord(scope.row)">
+                编辑
+              </el-button>
+              <el-button type="danger" size="small" @click="showDeleteConfirm(scope.row)">
+                删除
+              </el-button>
+            </div>
+
           </template>
         </el-table-column>
       </el-table>
@@ -483,5 +486,20 @@ onMounted(() => {
 .search-button {
   --el-button-bg-color: var(--el-color-primary) !important;
   --el-button-border-color: var(--el-color-primary) !important;
+}
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.action-buttons .el-button {
+  width: 70% ;
+  padding: 6px 12px !important; 
+  text-align: center !important; 
+  box-sizing: border-box !important;
+  margin: 0 !important; 
 }
 </style>

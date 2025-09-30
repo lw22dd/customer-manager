@@ -15,21 +15,21 @@
             </el-col>
             <el-card class="search-panel" shadow="hover" :body-style="{ padding: '16px' }">
               <el-col :xs="24" :sm="16">
-              <el-input v-model="searchKeyword" placeholder="请输入搜索关键词" class="search-input" @keyup.enter="search"
-                :suffix-icon="Search" />
-            </el-col>
-            <el-col :xs="12" :sm="6" class="mt-2 sm:mt-0">
-              <el-button type="primary" @click="search" class="w-full*20% search-button">
-                搜索
-              </el-button>
-            </el-col>
-            <el-col v-if="searchKeyword" :xs="12" :sm="6" class="mt-2 sm:mt-0">
-              <el-button @click="resetSearch" class="w-full">
-                重置
-              </el-button>
-            </el-col>
+                <el-input v-model="searchKeyword" placeholder="请输入搜索关键词" class="search-input" @keyup.enter="search"
+                  :suffix-icon="Search" />
+              </el-col>
+              <el-col :xs="12" :sm="6" class="mt-2 sm:mt-0">
+                <el-button type="primary" @click="search" class="w-full*20% search-button">
+                  搜索
+                </el-button>
+              </el-col>
+              <el-col v-if="searchKeyword" :xs="12" :sm="6" class="mt-2 sm:mt-0">
+                <el-button @click="resetSearch" class="w-full">
+                  重置
+                </el-button>
+              </el-col>
             </el-card>
-            
+
           </el-row>
         </el-col>
         <el-col :lg="8" :xs="24" class="mt-2 lg:mt-0">
@@ -54,15 +54,18 @@
         <el-table-column prop="data.phone" label="电话*" :show-overflow-tooltip="true" header-align="left" />
         <el-table-column label="操作" width="120" fixed="right">
           <template #default="scope">
-            <el-button type="success" size="small" @click="viewRecord(scope.row)" style="margin-right: 5px">
-              查看
-            </el-button>
-            <el-button type="primary" size="small" @click="editRecord(scope.row)" style="margin-right: 5px">
-              编辑
-            </el-button>
-            <el-button type="danger" size="small" @click="showDeleteConfirm(scope.row)">
-              删除
-            </el-button>
+            <div class="action-buttons">
+              <el-button type="success" size="small" @click="viewRecord(scope.row)">
+                查看
+              </el-button>
+              <el-button type="primary" size="small" @click="editRecord(scope.row)">
+                编辑
+              </el-button>
+              <el-button type="danger" size="small" @click="showDeleteConfirm(scope.row)">
+                删除
+              </el-button>
+            </div>
+
           </template>
         </el-table-column>
       </el-table>
@@ -111,25 +114,25 @@
           :rules="!isViewMode && field.required ? [{ required: true, message: `请输入${field.fieldLabel}`, trigger: 'blur' }] : []"
           class="mb-4">
           <div v-if="field.fieldType === 'text'">
-            <el-input v-model="formData[field.fieldName]" :placeholder="field.placeholder || `请输入${field.fieldLabel}`"
+            <el-input v-model="formData[field.fieldName]" :placeholder="isViewMode && !formData[field.fieldName] ? '' : (field.placeholder || `请输入${field.fieldLabel}`)"
               :maxlength="field.maxLength || 200" show-word-limit />
           </div>
           <div v-else-if="field.fieldType === 'number'">
             <el-input-number v-model.number="formData[field.fieldName]"
-              :placeholder="field.placeholder || `请输入${field.fieldLabel}`" :min="field.min || 0"
+              :placeholder="isViewMode && !formData[field.fieldName] ? '' : (field.placeholder || `请输入${field.fieldLabel}`)" :min="field.min || 0"
               :max="field.max || 99999999" :precision="field.decimalPlaces || 0" />
           </div>
           <div v-else-if="field.fieldType === 'date'">
-            <el-date-picker v-model="formData[field.fieldName]" type="date" placeholder="选择日期" format="YYYY-MM-DD"
+            <el-date-picker v-model="formData[field.fieldName]" type="date" :placeholder="isViewMode && !formData[field.fieldName] ? '' : '选择日期'" format="YYYY-MM-DD"
               value-format="YYYY-MM-DD" />
           </div>
           <div v-else-if="field.fieldType === 'textarea'">
             <el-input v-model="formData[field.fieldName]" type="textarea"
-              :placeholder="field.placeholder || `请输入${field.fieldLabel}`" :rows="4"
+              :placeholder="isViewMode && !formData[field.fieldName] ? '' : (field.placeholder || `请输入${field.fieldLabel}`)" :rows="4"
               :maxlength="field.maxLength || 1000" show-word-limit />
           </div>
           <div v-else-if="field.fieldType === 'select' && field.options">
-            <el-select v-model="formData[field.fieldName]" placeholder="请选择" clearable>
+            <el-select v-model="formData[field.fieldName]" :placeholder="isViewMode && !formData[field.fieldName] ? '' : '请选择'" clearable>
               <el-option v-for="option in parseOptions(field.options)" :key="option.value" :label="option.label"
                 :value="option.value" />
             </el-select>
@@ -316,7 +319,11 @@ const viewRecord = (record: DynamicTableRecord) => {
   store.setCurrentRecord(record); // 标记当前操作的记录
   resetForm(); // 重置表单
   if (record.data) {
-    Object.assign(formData, { ...record.data }); // 填充记录数据
+    Object.entries(record.data).forEach(([key, value]) => {
+      if(value!==undefined && value!==null && value!==''){
+        formData[key] = value;
+      }
+    }) // 填充记录数据
   }
   isViewMode.value = true; // 进入查看模式
   showEditModal.value = true; // 复用编辑模态框（通过 isViewMode 区分场景）
@@ -387,11 +394,13 @@ const resetForm = () => {
   });
 
   // 设置默认值
-  store.sortedMetadata.forEach((field: any) => {
-    if (field.defaultValue) {
-      formData[field.fieldName] = field.defaultValue;
-    }
-  });
+   if (!isViewMode.value) {
+    store.sortedMetadata.forEach((field: any) => {
+      if (field.defaultValue) {
+        formData[field.fieldName] = field.defaultValue;
+      }
+    });
+  }
 };
 
 /**
@@ -492,5 +501,20 @@ onMounted(() => {
 .search-button {
   --el-button-bg-color: var(--el-color-primary) !important;
   --el-button-border-color: var(--el-color-primary) !important;
+}
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.action-buttons .el-button {
+  width: 70% ;
+  padding: 6px 12px !important; 
+  text-align: center !important; 
+  box-sizing: border-box !important;
+  margin: 0 !important; 
 }
 </style>

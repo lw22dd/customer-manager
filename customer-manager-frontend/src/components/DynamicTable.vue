@@ -6,25 +6,17 @@
         <el-col :lg="16" :xs="24">
           <el-row :gutter="10" type="flex" align="middle">
             <el-col :xs="24" :sm="8">
-              <el-select 
-                v-model="searchField" 
-                placeholder="所有字段" 
-                class="search-field w-full"
-              >
+              <el-select v-model="searchField" placeholder="所有字段" class="search-field w-full">
                 <el-option value="">所有字段</el-option>
                 <el-option v-for="field in sortedMetadata" :key="field.fieldName" :value="field.fieldName">
                   {{ field.fieldLabel }}
                 </el-option>
               </el-select>
             </el-col>
-            <el-col :xs="24" :sm="16">
-              <el-input 
-                v-model="searchKeyword" 
-                placeholder="请输入搜索关键词" 
-                class="search-input"
-                @keyup.enter="search"
-                :suffix-icon="Search"
-              />
+            <el-card class="search-panel" shadow="hover" :body-style="{ padding: '16px' }">
+              <el-col :xs="24" :sm="16">
+              <el-input v-model="searchKeyword" placeholder="请输入搜索关键词" class="search-input" @keyup.enter="search"
+                :suffix-icon="Search" />
             </el-col>
             <el-col :xs="12" :sm="6" class="mt-2 sm:mt-0">
               <el-button type="primary" @click="search" class="w-full*20% search-button">
@@ -36,80 +28,46 @@
                 重置
               </el-button>
             </el-col>
+            </el-card>
+            
           </el-row>
         </el-col>
         <el-col :lg="8" :xs="24" class="mt-2 lg:mt-0">
           <el-button type="success" @click="showAddModal = true" class="w-full lg:w-auto lg:float-right">
-            <el-icon><Plus /></el-icon>
+            <el-icon>
+              <Plus />
+            </el-icon>
             新增记录
           </el-button>
         </el-col>
       </el-row>
     </div>
-    
+
     <!-- 表格 -->
     <div class="table-wrapper py-4">
-      <el-table 
-        v-if="!isLoading" 
-        :data="records" 
-        style="width: 100%"
-        border
-        v-loading="isLoading"
-        element-loading-text="加载中..."
-        :header-cell-style="{ 'white-space': 'nowrap' }"
-      >
+      <el-table v-if="!isLoading" :data="records" style="width: 100%" border v-loading="isLoading"
+        element-loading-text="加载中..." :header-cell-style="{ 'white-space': 'nowrap' }">
         <el-table-column type="selection" width="55" />
-        <el-table-column 
-          v-for="field in sortedMetadata" 
-          :key="field.fieldName"
-          :prop="`data.${field.fieldName}`"
-          :label="`${field.fieldLabel}${field.required ? '*' : ''}`"
-          :show-overflow-tooltip="true"
-          header-align="left"
-        >
-          <template #default="scope">
-            <div v-if="field.fieldType === 'date' && scope.row.data[field.fieldName]">
-              {{ formatDate(scope.row.data[field.fieldName]) }}
-            </div>
-            <div v-else-if="field.fieldType === 'select' && scope.row.data[field.fieldName] && field.options">
-              {{ getOptionLabel(field.options, scope.row.data[field.fieldName]) }}
-            </div>
-            <div v-else-if="field.fieldType === 'checkbox' && scope.row.data[field.fieldName]">
-              <el-checkbox 
-                :checked="scope.row.data[field.fieldName] === true || scope.row.data[field.fieldName] === 'true'"
-                :disabled="true"
-              />
-            </div>
-            <div v-else-if="field.fieldType === 'radio' && scope.row.data[field.fieldName] && field.options">
-              {{ getOptionLabel(field.options, scope.row.data[field.fieldName]) }}
-            </div>
-            <div v-else>
-              {{ scope.row.data[field.fieldName] ?? '-' }}
-            </div>
-          </template>
-        </el-table-column>
+        <!-- 姓名列 -->
+        <el-table-column prop="data.name" label="姓名*" :show-overflow-tooltip="true" header-align="left" />
+        <!-- 电话列 -->
+        <el-table-column prop="data.phone" label="电话*" :show-overflow-tooltip="true" header-align="left" />
         <el-table-column label="操作" width="120" fixed="right">
           <template #default="scope">
-            <el-button 
-              type="primary" 
-              size="small" 
-              @click="editRecord(scope.row)"
-              style="margin-right: 5px"
-            >
+            <el-button type="success" size="small" @click="viewRecord(scope.row)" style="margin-right: 5px">
+              查看
+            </el-button>
+            <el-button type="primary" size="small" @click="editRecord(scope.row)" style="margin-right: 5px">
               编辑
             </el-button>
-            <el-button 
-              type="danger" 
-              size="small" 
-              @click="showDeleteConfirm(scope.row)"
-            >
+            <el-button type="danger" size="small" @click="showDeleteConfirm(scope.row)">
               删除
             </el-button>
           </template>
         </el-table-column>
       </el-table>
     </div>
-    
+
     <!-- 分页 -->
     <div class="pagination" v-if="!isLoading && totalRecords > 0">
       <el-row type="flex" justify="space-between" align="middle">
@@ -119,19 +77,12 @@
           </span>
         </el-col>
         <el-col :xs="24" :sm="12" class="mt-2 sm:mt-0">
-          <el-pagination 
-            background
-            layout="prev, pager, next"
-            :total="totalRecords"
-            :page-size="pageSize"
-            :current-page="currentPage"
-            @current-change="changePage"
-            style="float: right"
-          />
+          <el-pagination background layout="prev, pager, next" :total="totalRecords" :page-size="pageSize"
+            :current-page="currentPage" @current-change="changePage" style="float: right" />
         </el-col>
       </el-row>
     </div>
-    
+
     <!-- 批量操作 -->
     <div class="batch-actions" v-if="!isLoading && selectedIds.length > 0">
       <el-row type="flex" align="middle">
@@ -142,78 +93,45 @@
         </el-col>
         <el-col>
           <el-button type="danger" @click="showBatchDeleteConfirm">
-            <el-icon><Delete /></el-icon>
+            <el-icon>
+              <Delete />
+            </el-icon>
             批量删除
           </el-button>
         </el-col>
       </el-row>
     </div>
-    
- <!-- 新增/编辑记录模态框 -->
-      <el-dialog
-        v-model="showFormModal"
-        :title="showEditModal ? '编辑记录' : '新增记录'"
-        width="70%"
-        destroy-on-close
-        :before-close="closeModal"
-    >
-      <el-form @submit.prevent="saveRecord" :model="formData" label-width="120px" size="default">
-        <el-form-item 
-          v-for="field in sortedMetadata" 
-          :key="field.fieldName"
-          :label="`${field.fieldLabel}${field.required ? '*' : ''}`"
-          :prop="field.fieldName"
-          :rules="field.required ? [{ required: true, message: `请输入${field.fieldLabel}`, trigger: 'blur' }] : []"
-          class="mb-4"
-        >
+
+    <!-- 新增/编辑记录模态框 -->
+    <el-dialog v-model="showFormModal" :title="isViewMode ? '查看记录' : (showEditModal ? '编辑记录' : '新增记录')" width="70%"
+      destroy-on-close :before-close="closeModal">
+      <el-form @submit.prevent="saveRecord" :model="formData" label-width="120px" size="default" :disabled="isViewMode">
+        <el-form-item v-for="field in sortedMetadata" :key="field.fieldName"
+          :label="`${field.fieldLabel}${field.required ? '*' : ''}`" :prop="field.fieldName"
+          :rules="!isViewMode && field.required ? [{ required: true, message: `请输入${field.fieldLabel}`, trigger: 'blur' }] : []"
+          class="mb-4">
           <div v-if="field.fieldType === 'text'">
-            <el-input 
-              v-model="formData[field.fieldName]"
-              :placeholder="field.placeholder || `请输入${field.fieldLabel}`"
-              :maxlength="field.maxLength || 200"
-              show-word-limit
-            />
+            <el-input v-model="formData[field.fieldName]" :placeholder="field.placeholder || `请输入${field.fieldLabel}`"
+              :maxlength="field.maxLength || 200" show-word-limit />
           </div>
           <div v-else-if="field.fieldType === 'number'">
-            <el-input-number 
-              v-model.number="formData[field.fieldName]"
-              :placeholder="field.placeholder || `请输入${field.fieldLabel}`"
-              :min="field.min || 0"
-              :max="field.max || 99999999"
-              :precision="field.decimalPlaces || 0"
-            />
+            <el-input-number v-model.number="formData[field.fieldName]"
+              :placeholder="field.placeholder || `请输入${field.fieldLabel}`" :min="field.min || 0"
+              :max="field.max || 99999999" :precision="field.decimalPlaces || 0" />
           </div>
           <div v-else-if="field.fieldType === 'date'">
-            <el-date-picker 
-              v-model="formData[field.fieldName]"
-              type="date"
-              placeholder="选择日期"
-              format="YYYY-MM-DD"
-              value-format="YYYY-MM-DD"
-            />
+            <el-date-picker v-model="formData[field.fieldName]" type="date" placeholder="选择日期" format="YYYY-MM-DD"
+              value-format="YYYY-MM-DD" />
           </div>
           <div v-else-if="field.fieldType === 'textarea'">
-            <el-input 
-              v-model="formData[field.fieldName]"
-              type="textarea"
-              :placeholder="field.placeholder || `请输入${field.fieldLabel}`"
-              :rows="4"
-              :maxlength="field.maxLength || 1000"
-              show-word-limit
-            />
+            <el-input v-model="formData[field.fieldName]" type="textarea"
+              :placeholder="field.placeholder || `请输入${field.fieldLabel}`" :rows="4"
+              :maxlength="field.maxLength || 1000" show-word-limit />
           </div>
           <div v-else-if="field.fieldType === 'select' && field.options">
-            <el-select 
-              v-model="formData[field.fieldName]"
-              placeholder="请选择"
-              clearable
-            >
-              <el-option 
-                v-for="option in parseOptions(field.options)" 
-                :key="option.value"
-                :label="option.label"
-                :value="option.value"
-              />
+            <el-select v-model="formData[field.fieldName]" placeholder="请选择" clearable>
+              <el-option v-for="option in parseOptions(field.options)" :key="option.value" :label="option.label"
+                :value="option.value" />
             </el-select>
           </div>
           <div v-else-if="field.fieldType === 'checkbox'">
@@ -223,11 +141,7 @@
           </div>
           <div v-else-if="field.fieldType === 'radio' && field.options">
             <el-radio-group v-model="formData[field.fieldName]">
-              <el-radio 
-                v-for="option in parseOptions(field.options)" 
-                :key="option.value"
-                :label="option.value"
-              >
+              <el-radio v-for="option in parseOptions(field.options)" :key="option.value" :label="option.value">
                 {{ option.label }}
               </el-radio>
             </el-radio-group>
@@ -237,26 +151,15 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="closeModal">取消</el-button>
-          <el-button type="primary" @click="saveRecord">确定</el-button>
+          <el-button v-if="!isViewMode" type="primary" @click="saveRecord">确定</el-button>
         </span>
       </template>
     </el-dialog>
-    
+
     <!-- 删除确认模态框 -->
-    <el-dialog 
-      v-model="showDeleteModal"
-      title="确认删除"
-      width="500px"
-      :before-close="closeDeleteModal"
-      destroy-on-close
-    >
+    <el-dialog v-model="showDeleteModal" title="确认删除" width="500px" :before-close="closeDeleteModal" destroy-on-close>
       <div class="text-center py-4">
-        <el-alert
-          title="警告"
-          type="warning"
-          :closable="false"
-          class="mb-4"
-        >
+        <el-alert title="警告" type="warning" :closable="false" class="mb-4">
           <p>确定要删除这条记录吗？</p>
           <p class="text-danger">删除后数据将无法恢复！</p>
         </el-alert>
@@ -268,22 +171,12 @@
         </span>
       </template>
     </el-dialog>
-    
+
     <!-- 批量删除确认模态框 -->
-    <el-dialog 
-      v-model="showBatchDeleteModal"
-      title="批量删除"
-      width="500px"
-      :before-close="closeBatchDeleteModal"
-      destroy-on-close
-    >
+    <el-dialog v-model="showBatchDeleteModal" title="批量删除" width="500px" :before-close="closeBatchDeleteModal"
+      destroy-on-close>
       <div class="text-center py-4">
-        <el-alert
-          title="警告"
-          type="warning"
-          :closable="false"
-          class="mb-4"
-        >
+        <el-alert title="警告" type="warning" :closable="false" class="mb-4">
           <p>确定要删除选中的 {{ selectedIds.length }} 条记录吗？</p>
           <p class="text-danger">删除后数据将无法恢复！</p>
         </el-alert>
@@ -324,6 +217,7 @@ const deleteRecordItem = ref<DynamicTableRecord | null>(null);
 const searchKeyword = ref('');
 const searchField = ref('');
 const isSearching = ref(false);
+const isViewMode = ref(false);
 
 // 用于模态框的计算属性
 const showFormModal = computed({
@@ -368,7 +262,7 @@ const formatDate = (dateString: string): string => {
 /**
  * 解析选项配置
  */
-const parseOptions = (optionsString: string): Array<{label: string; value: string}> => {
+const parseOptions = (optionsString: string): Array<{ label: string; value: string }> => {
   try {
     if (optionsString.startsWith('[')) {
       return JSON.parse(optionsString);
@@ -416,6 +310,19 @@ const changePage = (page: number) => {
 };
 
 /**
+ * 查看记录（只读）
+ */
+const viewRecord = (record: DynamicTableRecord) => {
+  store.setCurrentRecord(record); // 标记当前操作的记录
+  resetForm(); // 重置表单
+  if (record.data) {
+    Object.assign(formData, { ...record.data }); // 填充记录数据
+  }
+  isViewMode.value = true; // 进入查看模式
+  showEditModal.value = true; // 复用编辑模态框（通过 isViewMode 区分场景）
+};
+
+/**
  * 编辑记录
  */
 const editRecord = (record: DynamicTableRecord) => {
@@ -451,6 +358,7 @@ const showBatchDeleteConfirm = () => {
 const closeModal = () => {
   showAddModal.value = false;
   showEditModal.value = false;
+  isViewMode.value = false;
   resetForm();
 };
 
@@ -477,7 +385,7 @@ const resetForm = () => {
   Object.keys(formData).forEach(key => {
     delete formData[key];
   });
-  
+
   // 设置默认值
   store.sortedMetadata.forEach((field: any) => {
     if (field.defaultValue) {
@@ -495,12 +403,12 @@ const saveRecord = async () => {
     tableKey: store.currentTableKey,
     data: { ...formData }
   };
-  
+
   // 如果是编辑模式，添加ID
   if (store.currentRecord?.id) {
     record.id = store.currentRecord.id;
   }
-  
+
   // 保存
   const result = await store.saveRecord(record);
   if (result) {

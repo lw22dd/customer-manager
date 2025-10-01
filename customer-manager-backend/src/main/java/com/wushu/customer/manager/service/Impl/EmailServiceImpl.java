@@ -8,6 +8,7 @@ import com.wushu.customer.manager.service.DynamicTableService;
 import com.wushu.customer.manager.model.DynamicTableRecord;
 import com.wushu.customer.manager.model.DynamicTableMetadata;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -34,11 +35,14 @@ public class EmailServiceImpl implements EmailService {
     
     @Autowired
     private DynamicTableService dynamicTableService;
+    
+    @Value("${spring.mail.username}")
+    private String fromEmail;
 
     @Override
     public void sendSimpleEmail(String to, String subject, String text) {
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom("1322168192@qq.com");
+        message.setFrom(fromEmail);
         message.setTo(to);
         message.setSubject(subject);
         message.setText(text);
@@ -50,7 +54,7 @@ public class EmailServiceImpl implements EmailService {
         try {
             MimeMessage message = emailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
-            helper.setFrom("1322168192@qq.com");
+            helper.setFrom(fromEmail);
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(html, true);
@@ -65,7 +69,7 @@ public class EmailServiceImpl implements EmailService {
         try {
             MimeMessage message = emailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
-            helper.setFrom("1322168192@qq.com");
+            helper.setFrom(fromEmail);
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(text);
@@ -86,7 +90,7 @@ public class EmailServiceImpl implements EmailService {
         try {
             MimeMessage message = emailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
-            helper.setFrom("1322168192@qq.com");
+            helper.setFrom(fromEmail);
             helper.setTo(emailRequest.getTo());
             
             if (emailRequest.getCc() != null && !emailRequest.getCc().isEmpty()) {

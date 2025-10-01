@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wushu.customer.manager.model.EmailRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -22,6 +23,9 @@ public class EmailControllerTest {
 
     @Autowired
     private WebApplicationContext webApplicationContext;
+    
+    @Value("${spring.mail.username}")
+    private String testEmail;
 
     private String getJwtToken() throws Exception {
         MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
@@ -48,7 +52,7 @@ public class EmailControllerTest {
         String token = getJwtToken();
         
         EmailRequest emailRequest = new EmailRequest();
-        emailRequest.setTo("1322168192@qq.com");
+        emailRequest.setTo(testEmail);
         emailRequest.setSubject("测试发送邮件的接口！");
         emailRequest.setText("您好！这是我发送的一封测试发送接口的邮件，看完请删除记录。");
         emailRequest.setCc(Collections.emptyList());
@@ -73,7 +77,7 @@ public class EmailControllerTest {
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/email/text")
                 .header("Authorization", "Bearer " + token)
-                .param("to", "1322168192@qq.com")
+                .param("to", testEmail)
                 .param("subject", "测试发送邮件的接口！")
                 .param("text", "您好！这是我发送的一封测试发送接口的邮件，看完请删除记录。"))
                 .andExpect(MockMvcResultMatchers.status().isOk());
@@ -88,7 +92,7 @@ public class EmailControllerTest {
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/email/html")
                 .header("Authorization", "Bearer " + token)
-                .param("to", "1322168192@qq.com")
+                .param("to", testEmail)
                 .param("subject", "测试发送邮件的接口！")
                 .param("html", "<h1>您好！</h1><p>这是我发送的一封<strong>测试发送接口</strong>的邮件，<br/>看完请删除记录。</p>"))
                 .andExpect(MockMvcResultMatchers.status().isOk());

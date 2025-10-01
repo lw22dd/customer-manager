@@ -4,6 +4,7 @@ import type { DynamicTableMetadata } from '../models/DynamicTableMetadata';
 import type { DynamicTableRecord } from '../models/DynamicTableRecord';
 import type { PagingResult } from '../models/Result';
 import DynamicTableApi from '@/apis/dynamicTableApi';
+import * as XLSX from 'xlsx';
 
 
 
@@ -176,6 +177,8 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   const loadRecordsWithPage = async (page?: number, size?: number) => {
     const p = page || currentPage.value;
     const s = size || pageSize.value;
+    // 先更新当前页码，确保前端显示正确
+    currentPage.value = p;
     isLoading.value = true;
     try {
 
@@ -184,7 +187,6 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
       if (response.code === 200 && response.data) {
         pagedRecords.value = response.data;
         records.value = response.data.items || [];
-        currentPage.value = response.data.current || 1;
         pageSize.value = response.data.size || s;
         totalRecords.value = response.data.totalCount || records.value.length;
 
@@ -315,6 +317,29 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   };
 
   /**
+   * 上传头像
+   */
+  const uploadAvatar = async (id: string, avatar: string) => {
+    isLoading.value = true;
+    try {
+      const result = await DynamicTableApi.uploadAvatar(id, avatar);
+      if (result.code === 200 && result.data) {
+        // 重新加载数据以更新头像
+        await loadRecords();
+        return true;
+      } else {
+        console.error('上传头像失败:', result.msg);
+        return false;
+      }
+    } catch (error) {
+      console.error('上传头像失败:', error);
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  /**
    * 切换记录选择状态
    */
   const toggleSelect = (id: number) => {
@@ -396,39 +421,230 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     ]);
   };
 
-  // 暴露状态和方法
-  return {
-    // 状态
-    currentTableKey,
-    metadataList,
-    sortedMetadata,
-    records,
-    pagedRecords,
-    currentRecord,
-    selectedIds,
-    isAllSelected,
-    isLoading,
-    searchKeyword,
-    searchField,
-    currentPage,
-    pageSize,
-    totalRecords,
+  /**
+     * 导出当前页数据
+     */
+    const exportCurrentPageData = async () => {
+      isLoading.value = true;
+      try {
+        const exportData = prepareExportData(records.value);
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, currentTableKey.value);
+        
+        // 添加表头信息（元数据）
+        const metadataWorksheet = XLSX.utils.json_to_sheet(
+          metadataList.value.map(field => ({
+            字段名称: field.fieldName,
+            字段标签: field.fieldLabel,
+            字段类型: field.fieldType,
+            是否必填: field.required ? '是' : '否',
+            默认值: field.defaultValue || '-',
+            最大长度: field.maxLength || '-',
+            排序: field.sortOrder || 999
+          }))
+        );
+        XLSX.utils.book_append_sheet(workbook, metadataWorksheet, '表结构信息');
+        
+        // 导出文件
+        XLSX.writeFile(workbook, `${currentTableKey.value}_数据_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.xlsx`);
+        return true;
+      } catch (error) {
+        console.error('导出当前页数据失败:', error);
+        return false;
+      } finally {
+        isLoading.value = false;
+      }
+    };
 
-    // 方法
-    setCurrentTableKey,
-    resetState,
-    loadMetadata,
-    saveMetadata,
-    deleteMetadata,
-    loadRecords,
-    loadRecordsWithPage,
-    setCurrentRecord,
-    saveRecord,
-    deleteRecord,
-    deleteSelectedRecords,
-    toggleSelect,
-    setSearchParams,
-    applySearch,
-    initTable
-  };
+    /**
+     * 导出所有数据
+     */
+    const exportAllData = async () => {
+      isLoading.value = true;
+      try {
+        let allRecords: DynamicTableRecord[] = [];
+        let currentPageNum = 1;
+        const pageSizeNum = 100; // 每页100条，防止一次性加载过多数据
+        let hasMoreData = true;
+
+        // 分页加载所有数据
+        while (hasMoreData) {
+          const response = await DynamicTableApi.getRecordsByTableKeyWithPage(
+            currentTableKey.value,
+            currentPageNum,
+            pageSizeNum
+          );
+          
+          if (response.code === 200 && response.data && response.data.items) {
+            const pageRecords = response.data.items;
+            allRecords = [...allRecords, ...pageRecords];
+            
+            // 检查是否还有更多数据
+            hasMoreData = pageRecords.length === pageSizeNum;
+            currentPageNum++;
+          } else {
+            hasMoreData = false;
+          }
+        }
+
+        // 如果有搜索条件，应用搜索
+        if (searchKeyword.value.trim()) {
+          const searchResponse = searchField.value
+            ? await DynamicTableApi.searchByFieldAndKeyword(
+                currentTableKey.value,
+                searchField.value,
+                searchKeyword.value
+              )
+            : await DynamicTableApi.searchByKeyword(
+                currentTableKey.value,
+                searchKeyword.value
+              );
+          
+          if (searchResponse.code === 200 && searchResponse.data) {
+            allRecords = searchResponse.data;
+          }
+        }
+
+        // 导出数据
+        const exportData = prepareExportData(allRecords);
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, currentTableKey.value);
+        
+        // 添加表头信息（元数据）
+        const metadataWorksheet = XLSX.utils.json_to_sheet(
+          metadataList.value.map(field => ({
+            字段名称: field.fieldName,
+            字段标签: field.fieldLabel,
+            字段类型: field.fieldType,
+            是否必填: field.required ? '是' : '否',
+            默认值: field.defaultValue || '-',
+            最大长度: field.maxLength || '-',
+            排序: field.sortOrder || 999
+          }))
+        );
+        XLSX.utils.book_append_sheet(workbook, metadataWorksheet, '表结构信息');
+        
+        // 导出文件
+        XLSX.writeFile(workbook, `${currentTableKey.value}_全量数据_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.xlsx`);
+        return true;
+      } catch (error) {
+        console.error('导出所有数据失败:', error);
+        return false;
+      } finally {
+        isLoading.value = false;
+      }
+    };
+
+    /**
+     * 导出选中的数据
+     */
+    const exportSelectedData = async () => {
+      if (selectedIds.value.length === 0) return false;
+      
+      isLoading.value = true;
+      try {
+        // 从当前记录中过滤出选中的记录
+        const selectedRecords = records.value.filter(
+          record => record.id && selectedIds.value.includes(record.id)
+        );
+        
+        // 导出数据
+        const exportData = prepareExportData(selectedRecords);
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, currentTableKey.value);
+        
+        // 导出文件
+        XLSX.writeFile(workbook, `${currentTableKey.value}_选中数据_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.xlsx`);
+        return true;
+      } catch (error) {
+        console.error('导出选中数据失败:', error);
+        return false;
+      } finally {
+        isLoading.value = false;
+      }
+    };
+
+    /**
+     * 准备导出数据
+     */
+    const prepareExportData = (records: DynamicTableRecord[]) => {
+      // 创建字段名到字段标签的映射
+      const fieldLabelMap: Record<string, string> = {};
+      metadataList.value.forEach(field => {
+        fieldLabelMap[field.fieldName] = field.fieldLabel;
+      });
+
+      // 处理导出数据格式
+      return records.map(record => {
+        const exportRow: Record<string, any> = {};
+        
+        // 添加ID字段
+        if (record.id) {
+          exportRow['ID'] = record.id;
+        }
+        
+        // 添加其他字段，使用字段标签作为表头
+        if (record.data) {
+          Object.entries(record.data).forEach(([fieldName, value]) => {
+            // 使用字段标签作为键名
+            const label = fieldLabelMap[fieldName] || fieldName;
+            
+            // 处理不同类型的值
+            if (value === null || value === undefined) {
+              exportRow[label] = '';
+            } else if (typeof value === 'object') {
+              exportRow[label] = JSON.stringify(value);
+            } else {
+              exportRow[label] = value;
+            }
+          });
+        }
+        
+        return exportRow;
+      });
+    };
+
+    // 暴露状态和方法
+    return {
+      // 状态
+      currentTableKey,
+      metadataList,
+      sortedMetadata,
+      records,
+      pagedRecords,
+      currentRecord,
+      selectedIds,
+      isAllSelected,
+      isLoading,
+      searchKeyword,
+      searchField,
+      currentPage,
+      pageSize,
+      totalRecords,
+
+      // 方法
+      setCurrentTableKey,
+      resetState,
+      loadMetadata,
+      saveMetadata,
+      deleteMetadata,
+      uploadAvatar,
+      loadRecords,
+      loadRecordsWithPage,
+      setCurrentRecord,
+      saveRecord,
+      deleteRecord,
+      deleteSelectedRecords,
+      toggleSelect,
+      setSearchParams,
+      applySearch,
+      initTable,
+      exportCurrentPageData,
+      exportAllData,
+      exportSelectedData
+
+    };
 });

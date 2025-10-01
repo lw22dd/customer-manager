@@ -12,7 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class DynamicTableServiceImpl implements DynamicTableService {
@@ -92,5 +94,28 @@ public class DynamicTableServiceImpl implements DynamicTableService {
     @Override
     public List<DynamicTableRecord> searchByFieldAndKeyword(String tableKey, String fieldName, String keyword) {
         return recordMapper.searchByFieldAndKeyword(tableKey, fieldName, keyword);
+    }
+    
+    @Override
+    public boolean uploadAvatar(Long recordId, String avatarBase64) {
+        // 获取现有记录
+        DynamicTableRecord record = recordMapper.findById(recordId);
+        if (record == null) {
+            return false;
+        }
+        
+        // 获取现有数据并添加头像字段
+        Map<String, Object> data = record.getData();
+        if (data == null) {
+            data = new HashMap<>();
+        }
+        
+        // 设置头像数据
+        data.put("avatar", avatarBase64);
+        record.setData(data);
+        
+        // 更新记录
+        record.setUpdateTime(new Date());
+        return recordMapper.update(record) > 0;
     }
 }

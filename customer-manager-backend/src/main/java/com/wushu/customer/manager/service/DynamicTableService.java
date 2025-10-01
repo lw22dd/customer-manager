@@ -82,4 +82,12 @@ public interface DynamicTableService {
      * @return 记录列表
      */
     List<DynamicTableRecord> searchByFieldAndKeyword(String tableKey, String fieldName, String keyword);
+    
+    /**
+     * 上传客户头像
+     * @param recordId 记录ID
+     * @param avatarBase64 头像的Base64编码
+     * @return 是否成功
+     */
+    boolean uploadAvatar(Long recordId, String avatarBase64);
 }

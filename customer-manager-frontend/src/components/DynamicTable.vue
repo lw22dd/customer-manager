@@ -33,12 +33,36 @@
           </el-row>
         </el-col>
         <el-col :lg="8" :xs="24" class="mt-2 lg:mt-0">
-          <el-button type="success" @click="showAddModal = true" class="w-full lg:w-auto lg:float-right">
+          <el-button type="success" @click="showAddModal = true" class="w-full lg:w-auto lg:float-right mb-2 lg:mb-0 lg:mr-2">
             <el-icon>
               <Plus />
             </el-icon>
             新增记录
           </el-button>
+          <el-dropdown class="w-full lg:w-auto lg:float-right">
+            <el-button type="primary" class="w-full">
+              <el-icon>
+                <Download />
+              </el-icon>
+              导出
+              <el-icon class="el-icon--right">
+                <ArrowDown />
+              </el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item @click="exportCurrentPage">
+                  导出当前页
+                </el-dropdown-item>
+                <el-dropdown-item @click="exportAll">
+                  导出所有数据
+                </el-dropdown-item>
+                <el-dropdown-item v-if="selectedIds.length > 0" @click="exportSelected">
+                  导出选中数据 ({{ selectedIds.length }})
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </el-col>
       </el-row>
     </div>
@@ -109,6 +133,30 @@
     <el-dialog v-model="showFormModal" :title="isViewMode ? '查看记录' : (showEditModal ? '编辑记录' : '新增记录')" width="70%"
       destroy-on-close :before-close="closeModal">
       <el-form @submit.prevent="saveRecord" :model="formData" label-width="120px" size="default" :disabled="isViewMode">
+        <!-- 头像上传 -->
+        <el-form-item label="头像" class="mb-4">
+          <div class="avatar-upload-container">
+            <div class="avatar-preview" v-if="formData.avatar">
+              <img :src="formData.avatar" alt="头像预览" class="avatar-image">
+            </div>
+            <el-upload
+              v-if="!isViewMode"
+              action=""
+              :show-file-list="false"
+              :on-change="handleAvatarSelect"
+              :auto-upload="false"
+              accept="image/*"
+            >
+              <el-button type="primary" icon="Upload" v-if="!formData.avatar">
+                上传头像
+              </el-button>
+              <el-button v-else type="warning">
+                更换头像
+              </el-button>
+            </el-upload>
+          </div>
+        </el-form-item>
+        
         <el-form-item v-for="field in sortedMetadata" :key="field.fieldName"
           :label="`${field.fieldLabel}${field.required ? '*' : ''}`" :prop="field.fieldName"
           :rules="!isViewMode && field.required ? [{ required: true, message: `请输入${field.fieldLabel}`, trigger: 'blur' }] : []"
@@ -204,7 +252,7 @@
 </template>
 
 <script setup lang="ts">
-import { Search, Plus, Delete } from '@element-plus/icons-vue';
+import { Search, Plus, Delete, Download, ArrowDown, Upload } from '@element-plus/icons-vue';
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useDynamicTableStore } from '../stores/dynamicTableStore';
 import type { DynamicTableRecord } from '../models/DynamicTableRecord';
@@ -253,6 +301,49 @@ const isAllSelected = computed({
     store.isAllSelected = value;
   }
 });
+
+/**
+ * 导出当前页数据
+ */
+const exportCurrentPage = async () => {
+  const result = await store.exportCurrentPageData();
+  if (result) {
+    // 可以添加成功提示
+  } else {
+    alert('导出当前页数据失败，请重试');
+  }
+};
+
+/**
+ * 导出所有数据
+ */
+const exportAll = async () => {
+  if (totalRecords.value > 100) {
+    // 数据量较大时给出提示
+    if (!confirm(`确定要导出全部 ${totalRecords.value} 条数据吗？这可能需要一些时间。`)) {
+      return;
+    }
+  }
+  
+  const result = await store.exportAllData();
+  if (result) {
+    // 可以添加成功提示
+  } else {
+    alert('导出所有数据失败，请重试');
+  }
+};
+
+/**
+ * 导出选中数据
+ */
+const exportSelected = async () => {
+  const result = await store.exportSelectedData();
+  if (result) {
+    // 可以添加成功提示
+  } else {
+    alert('导出选中数据失败，请重试');
+  }
+};
 
 const totalPages = computed(() => {
   return Math.ceil(store.totalRecords / store.pageSize);
@@ -376,6 +467,61 @@ const editRecord = (record: DynamicTableRecord) => {
   showEditModal.value = true;
 };
 
+
+/**
+ * 处理头像选择逻辑
+ */
+const handleAvatarSelect = async (uploadFile: any) => {
+  try {
+    const file = uploadFile.raw;
+    console.log('选择的文件：', file);
+    
+    // 文件类型校验
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      alert('请上传图片文件');
+      return;
+    }
+    
+    // 文件大小校验
+    const isLt2M = file.size / 1024 / 1024 < 2;
+    if (!isLt2M) {
+      alert('上传头像图片大小不能超过 2MB!');
+      return;
+    }
+    
+    // 使用FileReader读取文件为Base64
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    
+    reader.onload = async () => {
+      const base64Image = reader.result as string;
+      
+      // 如果是编辑模式，调用上传头像API
+      if (store.currentRecord?.id) {
+        const result = await store.uploadAvatar(store.currentRecord.id.toString(), base64Image);
+        console.log('上传结果：', result);
+        if (result) {
+          // 更新全局表单中的头像数据
+          formData.avatar = base64Image;
+        } else {
+          alert('头像更新失败，请重试');
+        }
+      } else {
+        // 新增模式，先保存到表单，待保存记录时一并提交
+        formData.avatar = base64Image;
+      }
+    };
+    
+    reader.onerror = () => {
+      alert('图片读取失败，请重试');
+    };
+  } catch (error) {
+    console.error('处理头像失败:', error);
+    alert('处理头像失败，请重试');
+  }
+};
+
 /**
  * 显示删除确认
  */
@@ -432,6 +578,9 @@ const resetForm = () => {
         formData[field.fieldName] = field.defaultValue;
       }
     });
+    
+    // 设置头像默认值
+    formData.avatar = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
   }
 };
 
@@ -439,10 +588,13 @@ const resetForm = () => {
  * 保存记录
  */
 const saveRecord = async () => {
+  // 创建表单数据副本，确保包含头像信息
+  const recordData = { ...formData };
+  
   // 构建记录对象
   const record: DynamicTableRecord = {
     tableKey: store.currentTableKey,
-    data: { ...formData }
+    data: recordData
   };
 
   // 如果是编辑模式，添加ID
@@ -544,10 +696,51 @@ onMounted(() => {
 }
 
 .action-buttons .el-button {
-  width: 70%;
-  padding: 6px 12px !important;
-  text-align: center !important;
-  box-sizing: border-box !important;
-  margin: 0 !important;
-}
+    width: 70%;
+    padding: 6px 12px !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+  }
+  
+  /* 头像上传样式 */
+  .avatar-upload-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+  
+  .avatar-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid #ddd;
+    background-color: #f5f5f5;
+  }
+  
+  .avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  /* 生日选择器样式调整 */
+  .el-date-editor {
+    width: auto !important;
+    max-width: 200px;
+  }
+  
+  .el-date-editor .el-input__wrapper {
+    width: 200px !important;
+  }
+  
+  /* 调整模态框内表单元素的最大宽度 */
+  .el-form-item .el-input,
+  .el-form-item .el-select,
+  .el-form-item .el-cascader,
+  .el-form-item .el-date-editor {
+    max-width: 300px;
+  }
 </style>

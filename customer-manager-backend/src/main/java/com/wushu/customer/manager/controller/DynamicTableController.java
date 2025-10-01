@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/dynamic-table")
@@ -158,6 +159,30 @@ public class DynamicTableController {
             return Result.ok(records);
         } catch (Exception e) {
             return Result.fail("搜索失败: " + e.getMessage());
+        }
+    }
+    
+    // ==================== 头像上传功能 ====================
+    
+    /**
+     * 上传客户头像
+     */
+    @PostMapping("/record/{id}/avatar")
+    public Result<Boolean> uploadAvatar(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        try {
+            String avatarBase64 = payload.get("avatar");
+            if (avatarBase64 == null || avatarBase64.isEmpty()) {
+                return Result.fail("头像数据不能为空");
+            }
+            
+            boolean result = dynamicTableService.uploadAvatar(id, avatarBase64);
+            if (result) {
+                return Result.ok(true);
+            } else {
+                return Result.fail("上传头像失败");
+            }
+        } catch (Exception e) {
+            return Result.fail("上传头像失败: " + e.getMessage());
         }
     }
 }

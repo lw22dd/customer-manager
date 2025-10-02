@@ -164,8 +164,9 @@ public class EmailServiceImpl implements EmailService {
         if (!birthdayCustomers.isEmpty() && !users.isEmpty()) {
             // 构建邮件内容
             StringBuilder contentBuilder = new StringBuilder();
-            contentBuilder.append("您好！\n\n今天是以下客户的生日，请记得送上祝福：\n\n");
-            
+            contentBuilder.append("您好！\n\n")
+                    .append("3天后是以下客户的生日，请提前准备祝福或礼物：\n\n");
+
             for (DynamicTableRecord customer : birthdayCustomers) {
                 Map<String, Object> data = customer.getData();
                 contentBuilder.append("- ")
@@ -174,7 +175,7 @@ public class EmailServiceImpl implements EmailService {
                         .append(data.getOrDefault("phone", "无"))
                         .append(")\n");
             }
-            
+
             contentBuilder.append("\n祝您工作顺利！\n客户管理系统");
             
             // 向每个用户发送邮件
@@ -183,7 +184,7 @@ public class EmailServiceImpl implements EmailService {
                     try {
                         sendSimpleEmail(
                                 user.getEmail(),
-                                "客户生日提醒 - " + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日")),
+                                "客户生日提醒（3天后） - " + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日")),
                                 contentBuilder.toString()
                         );
                     } catch (Exception e) {

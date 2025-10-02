@@ -28,7 +28,6 @@
       <p class="error-message" v-if="errorMessage">{{ errorMessage }}</p>
     </div>
 
-    <button @click="handleTest">Test</button>
   </div>
 </template>
 

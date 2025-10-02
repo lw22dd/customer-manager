@@ -16,6 +16,8 @@ public class CorsConfig {
 
         // 允许的源
         config.addAllowedOrigin("http://localhost:5173");
+        config.addAllowedOrigin("http://localhost:8080");
+        config.addAllowedOrigin("http://39.97.35.247:8080");
         // 允许的请求头
         config.addAllowedHeader("*");
         // 允许的请求方法

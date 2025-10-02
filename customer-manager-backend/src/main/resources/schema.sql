@@ -6,39 +6,6 @@ DROP TABLE IF EXISTS dynamic_table_record;
 -- 创建新表
 CREATE TABLE IF NOT EXISTS user (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    nickname TEXT,
-    email TEXT
-);
-
-CREATE TABLE IF NOT EXISTS dynamic_table_metadata (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    table_key TEXT NOT NULL,
-    field_name TEXT NOT NULL,
-    field_label TEXT,
-    field_type TEXT,
-    placeholder TEXT,
-    required INTEGER DEFAULT 0,
-    regex TEXT,
-    options TEXT,
-    sort_order INTEGER,
-    default_value TEXT,
-    UNIQUE (table_key, field_name)
-);
-
-CREATE TABLE IF NOT EXISTS dynamic_table_record (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    table_key TEXT NOT NULL,
-    data TEXT NOT NULL,
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (table_key, data)
-);
-
-
-CREATE TABLE IF NOT EXISTS user (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
     nickname TEXT,
@@ -47,9 +14,6 @@ CREATE TABLE IF NOT EXISTS user (
     userface TEXT,
     regTime DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-
-
-
 
 -- 动态表元数据表
 CREATE TABLE IF NOT EXISTS dynamic_table_metadata (

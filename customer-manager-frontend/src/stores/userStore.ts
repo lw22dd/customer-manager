@@ -1,3 +1,4 @@
+import UserApi from '@/apis/userApi';
 import { Result } from '@/models/Result';
 import { CustomField, FormConfig, User } from '@/models/UserModel'
 import { defineStore } from 'pinia'
@@ -253,10 +254,38 @@ export const useUserStore = defineStore('user', () => {
     }
   };
   
-   onMounted(() => {
+  onMounted(() => {
     loadCustomers();
-
+    
+    // 从localStorage检查token并恢复登录状态
+    const token = localStorage.getItem('token');
+    if (token) {
+      // 设置登录状态为已登录
+      setLogin(true);
+      // 重要：重新获取用户信息以恢复完整状态
+      restoreUserInfo();
+    }
   });
+
+  // 新增方法：从服务器恢复用户信息
+  const restoreUserInfo = async () => {
+    try {
+      const response = await UserApi.getCurrentUser();
+      if (response.code === 200 && response.data) {
+        setUserInfo({
+          name: response.data.name,
+          email: response.data.email || undefined
+          // 其他需要的用户信息
+        });
+      }
+    } catch (error) {
+      console.error('恢复用户信息失败:', error);
+      // 如果恢复失败，可以考虑清除token并跳转到登录页
+      // logout();
+      // localStorage.removeItem('token');
+      // router.push('/login');
+    }
+  };
 
 
   return {

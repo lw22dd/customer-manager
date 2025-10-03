@@ -88,6 +88,34 @@ public class DynamicTableController {
     }
     
     /**
+     * 获取表的所有记录，按姓名首字母排序
+     */
+    @GetMapping("/record/{tableKey}/sortByName")
+    public Result<List<DynamicTableRecord>> getRecordsByTableKeyOrderByName(@PathVariable String tableKey) {
+        try {
+            List<DynamicTableRecord> records = dynamicTableService.getRecordsByTableKeyOrderByName(tableKey);
+            return Result.ok(records);
+        } catch (Exception e) {
+            return Result.fail("获取记录失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取表的所有记录，按创建时间排序
+     */
+    @GetMapping("/record/{tableKey}/sortByCreateTime")
+    public Result<List<DynamicTableRecord>> getRecordsByTableKeyOrderByCreateTime(
+            @PathVariable String tableKey,
+            @RequestParam(defaultValue = "DESC") String orderBy) {
+        try {
+            List<DynamicTableRecord> records = dynamicTableService.getRecordsByTableKeyOrderByCreateTime(tableKey, orderBy);
+            return Result.ok(records);
+        } catch (Exception e) {
+            return Result.fail("获取记录失败: " + e.getMessage());
+        }
+    }
+    
+    /**
      * 分页获取表的记录
      */
     @GetMapping("/record/{tableKey}/page")
@@ -97,6 +125,39 @@ public class DynamicTableController {
             @RequestParam(defaultValue = "10") int size) {
         try {
             PagingResult<DynamicTableRecord> records = dynamicTableService.getRecordsByTableKeyWithPage(tableKey, page, size);
+            return Result.ok(records);
+        } catch (Exception e) {
+            return Result.fail("分页获取记录失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 分页获取表的记录，按姓名首字母排序
+     */
+    @GetMapping("/record/{tableKey}/page/sortByName")
+    public Result<PagingResult<DynamicTableRecord>> getRecordsByTableKeyWithPageOrderByName(
+            @PathVariable String tableKey,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            PagingResult<DynamicTableRecord> records = dynamicTableService.getRecordsByTableKeyWithPageOrderByName(tableKey, page, size);
+            return Result.ok(records);
+        } catch (Exception e) {
+            return Result.fail("分页获取记录失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 分页获取表的记录，按创建时间排序
+     */
+    @GetMapping("/record/{tableKey}/page/sortByCreateTime")
+    public Result<PagingResult<DynamicTableRecord>> getRecordsByTableKeyWithPageOrderByCreateTime(
+            @PathVariable String tableKey,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "DESC") String orderBy) {
+        try {
+            PagingResult<DynamicTableRecord> records = dynamicTableService.getRecordsByTableKeyWithPageOrderByCreateTime(tableKey, page, size, orderBy);
             return Result.ok(records);
         } catch (Exception e) {
             return Result.fail("分页获取记录失败: " + e.getMessage());
@@ -126,6 +187,23 @@ public class DynamicTableController {
             return Result.ok(result);
         } catch (Exception e) {
             return Result.fail("删除记录失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 批量删除记录
+     */
+    @PostMapping("/record/batch")
+    public Result<Boolean> batchDeleteRecords(@RequestBody List<Long> ids) {
+        System.out.println("批量删除记录: " + ids);
+        try {
+            if (ids == null || ids.isEmpty()) {
+                return Result.fail("记录ID列表不能为空");
+            }
+            boolean result = dynamicTableService.batchDeleteRecords(ids);
+            return Result.ok(result);
+        } catch (Exception e) {
+            return Result.fail("批量删除记录失败: " + e.getMessage());
         }
     }
     

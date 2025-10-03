@@ -44,6 +44,21 @@ public interface DynamicTableService {
     List<DynamicTableRecord> getRecordsByTableKey(String tableKey);
     
     /**
+     * 获取表的所有记录，按姓名首字母排序
+     * @param tableKey 表唯一标识
+     * @return 记录列表
+     */
+    List<DynamicTableRecord> getRecordsByTableKeyOrderByName(String tableKey);
+    
+    /**
+     * 获取表的所有记录，按创建时间排序
+     * @param tableKey 表唯一标识
+     * @param orderBy 排序方式：ASC-正序，DESC-倒序
+     * @return 记录列表
+     */
+    List<DynamicTableRecord> getRecordsByTableKeyOrderByCreateTime(String tableKey, String orderBy);
+    
+    /**
      * 分页获取表的记录
      * @param tableKey 表唯一标识
      * @param page 页码
@@ -51,6 +66,25 @@ public interface DynamicTableService {
      * @return 分页结果
      */
     PagingResult<DynamicTableRecord> getRecordsByTableKeyWithPage(String tableKey, int page, int size);
+    
+    /**
+     * 分页获取表的记录，按姓名首字母排序
+     * @param tableKey 表唯一标识
+     * @param page 页码
+     * @param size 每页大小
+     * @return 分页结果
+     */
+    PagingResult<DynamicTableRecord> getRecordsByTableKeyWithPageOrderByName(String tableKey, int page, int size);
+    
+    /**
+     * 分页获取表的记录，按创建时间排序
+     * @param tableKey 表唯一标识
+     * @param page 页码
+     * @param size 每页大小
+     * @param orderBy 排序方式：ASC-正序，DESC-倒序
+     * @return 分页结果
+     */
+    PagingResult<DynamicTableRecord> getRecordsByTableKeyWithPageOrderByCreateTime(String tableKey, int page, int size, String orderBy);
     
     /**
      * 根据ID获取记录
@@ -65,6 +99,13 @@ public interface DynamicTableService {
      * @return 是否成功
      */
     boolean deleteRecord(Long id);
+    
+    /**
+     * 批量删除记录
+     * @param ids 记录ID列表
+     * @return 是否成功
+     */
+    boolean batchDeleteRecords(List<Long> ids);
     
     /**
      * 在所有字段中搜索关键词

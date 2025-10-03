@@ -1,5 +1,6 @@
 
 import axios from "axios";
+import { ElMessage } from "element-plus";
 
 const serverConfig = {
   baseURL: import.meta.env.VITE_APP_API_BASE_URL || "http://localhost:8080", // 使用环境变量中的API地址，如果没有则使用默认地址
@@ -42,6 +43,7 @@ serviceAxios.interceptors.response.use(
   },
   (err) => {
     // 处理请求错误
+    // 错误消息变量，根据需要使用
     let errorMessage = '请求失败，请稍后重试';
     
     if (err.response) {
@@ -78,7 +80,7 @@ serviceAxios.interceptors.response.use(
     }
     
     // 这里可以使用 Element Plus 的 Message 组件显示错误消息
-    // Message.error(errorMessage);
+    ElMessage.error(errorMessage);
     
     return Promise.reject(err);
   }

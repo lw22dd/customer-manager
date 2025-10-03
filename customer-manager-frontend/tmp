@@ -1,0 +1,24 @@
+
+    <!-- 分页获取记录 -->
+    <select id="findByTableKeyWithPage" resultMap="DynamicTableRecordMap">
+        SELECT * FROM dynamic_table_record 
+        WHERE table_key = #{tableKey} 
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 分页获取记录，按姓名首字母排序 -->
+    <select id="findByTableKeyWithPageOrderByName" resultMap="DynamicTableRecordMap">
+        SELECT * FROM dynamic_table_record 
+        WHERE table_key = #{tableKey} 
+        ORDER BY JSON_EXTRACT(data, '$.name') ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 分页获取记录，按创建时间排序 -->
+    <select id="findByTableKeyWithPageOrderByCreateTime" resultMap="DynamicTableRecordMap">
+        SELECT * FROM dynamic_table_record 
+        WHERE table_key = #{tableKey} 
+        ORDER BY create_time ${order}
+        LIMIT #{offset}, #{limit}
+    </select>

@@ -13,32 +13,48 @@
                 </el-option>
               </el-select>
             </el-col>
-            <el-card class="search-panel" shadow="hover" :body-style="{ padding: '16px' }">
-              <el-col :xs="24" :sm="16">
-                <el-input v-model="searchKeyword" placeholder="请输入搜索关键词" class="search-input" @keyup.enter="search"
-                  :suffix-icon="Search" />
-              </el-col>
-              <el-col :xs="12" :sm="6" class="mt-2 sm:mt-0">
-                <el-button type="primary" @click="search" class="w-full*20% search-button">
-                  搜索
-                </el-button>
-              </el-col>
-              <el-col v-if="searchKeyword" :xs="12" :sm="6" class="mt-2 sm:mt-0">
-                <el-button @click="resetSearch" class="w-full">
-                  重置
-                </el-button>
-              </el-col>
-            </el-card>
-
+            <el-col :xs="24" :sm="16">
+              <el-input v-model="searchKeyword" placeholder="请输入搜索关键词" class="search-input" @keyup.enter="search"
+                :suffix-icon="Search" style="margin-bottom: 8px;" />
+            </el-col>
+            <el-col :xs="12" :sm="6">
+              <el-button type="primary" @click="search" class="w-full search-button">
+                搜索
+              </el-button>
+            </el-col>
+            <el-col v-if="searchKeyword" :xs="12" :sm="6">
+              <el-button @click="resetSearch" class="w-full">
+                重置
+              </el-button>
+            </el-col>
           </el-row>
         </el-col>
         <el-col :lg="8" :xs="24" class="mt-2 lg:mt-0">
-          <el-button type="success" @click="showAddModal = true" class="w-full lg:w-auto lg:float-right mb-2 lg:mb-0 lg:mr-2">
+          <!-- 排序选择 -->
+          <div class="sort-container" style="display: flex; align-items: center; margin-bottom: 10px;">
+            <el-select v-model="sortField" placeholder="选择排序方式" style="width: 180px; margin-right: 10px;">
+              <el-option value="" label="默认（创建时间升序）"></el-option>
+              <el-option value="name" label="姓名首字母A-Z"></el-option>
+              <el-option value="createTime" label="创建时间降序"></el-option>
+            </el-select>
+            <el-button @click="handleSort" size="small">应用排序</el-button>
+          </div>
+          
+          <el-button type="success" @click="addRecord()"
+            class="w-full lg:w-auto lg:float-right mb-2 lg:mb-0 lg:mr-2">
             <el-icon>
               <Plus />
             </el-icon>
             新增记录
           </el-button>
+          <el-button type="danger" @click="showBatchDeleteConfirm" :disabled="selectedIds.length === 0"
+            class="w-full lg:w-auto lg:float-right mb-2 lg:mb-0 lg:mr-2">
+            <el-icon>
+              <Delete />
+            </el-icon>
+            批量删除 ({{ selectedIds.length }})
+          </el-button>
+          
           <el-dropdown class="w-full lg:w-auto lg:float-right">
             <el-button type="primary" class="w-full">
               <el-icon>
@@ -70,8 +86,21 @@
     <!-- 表格 -->
     <div class="table-wrapper py-4">
       <el-table v-if="!isLoading" :data="records" style="width: 100%" border v-loading="isLoading"
-        element-loading-text="加载中..." :header-cell-style="{ 'white-space': 'nowrap' }">
+        element-loading-text="加载中..." :header-cell-style="{ 'white-space': 'nowrap' }"
+        @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" />
+        <!-- 头像列 -->
+        <el-table-column label="头像*" width="100" header-align="center" align="center">
+          <template #default="scope">
+            <div v-if="scope.row.data.avatar" class="table-avatar">
+              <img :src="scope.row.data.avatar" alt="头像" class="avatar-image">
+            </div>
+            <!-- 姓名列 
+            <div v-else class="table-avatar-placeholder">
+              无头像
+            </div>-->
+          </template>
+        </el-table-column>
         <!-- 姓名列 -->
         <el-table-column prop="data.name" label="姓名*" :show-overflow-tooltip="true" header-align="left" />
         <!-- 电话列 -->
@@ -110,43 +139,19 @@
       </el-row>
     </div>
 
-    <!-- 批量操作 -->
-    <div class="batch-actions" v-if="!isLoading && selectedIds.length > 0">
-      <el-row type="flex" align="middle">
-        <el-col>
-          <el-badge :value="selectedIds.length" type="primary" class="mr-2">
-            <span>已选择</span>
-          </el-badge>
-        </el-col>
-        <el-col>
-          <el-button type="danger" @click="showBatchDeleteConfirm">
-            <el-icon>
-              <Delete />
-            </el-icon>
-            批量删除
-          </el-button>
-        </el-col>
-      </el-row>
-    </div>
 
     <!-- 新增/编辑记录模态框 -->
     <el-dialog v-model="showFormModal" :title="isViewMode ? '查看记录' : (showEditModal ? '编辑记录' : '新增记录')" width="70%"
       destroy-on-close :before-close="closeModal">
       <el-form @submit.prevent="saveRecord" :model="formData" label-width="120px" size="default" :disabled="isViewMode">
         <!-- 头像上传 -->
-        <el-form-item label="头像" class="mb-4">
+        <el-form-item label="头像*" class="mb-4" :rules="!isViewMode ? [{ required: true, message: '请上传头像', trigger: 'blur' }] : []">
           <div class="avatar-upload-container">
             <div class="avatar-preview" v-if="formData.avatar">
               <img :src="formData.avatar" alt="头像预览" class="avatar-image">
             </div>
-            <el-upload
-              v-if="!isViewMode"
-              action=""
-              :show-file-list="false"
-              :on-change="handleAvatarSelect"
-              :auto-upload="false"
-              accept="image/*"
-            >
+            <el-upload v-if="!isViewMode" action="" :show-file-list="false" :on-change="handleAvatarSelect"
+              :auto-upload="false" accept="image/*">
               <el-button type="primary" icon="Upload" v-if="!formData.avatar">
                 上传头像
               </el-button>
@@ -156,57 +161,56 @@
             </el-upload>
           </div>
         </el-form-item>
-        
-        <el-form-item v-for="field in sortedMetadata" :key="field.fieldName"
-          :label="`${field.fieldLabel}${field.required ? '*' : ''}`" :prop="field.fieldName"
-          :rules="!isViewMode && field.required ? [{ required: true, message: `请输入${field.fieldLabel}`, trigger: 'blur' }] : []"
-          class="mb-4">
-          <div v-if="field.fieldType === 'text'">
-            <el-autocomplete v-model="formData[field.fieldName]" 
-              :fetch-suggestions="(query: string, callback: (results: { value: string }[]) => void) => handleTextSuggestions(field.fieldName, query, callback)"
-              :placeholder="isViewMode && !formData[field.fieldName] ? '' : (field.placeholder ||
-              `请输入${field.fieldLabel}`)"
-              :maxlength="field.maxLength || 200"
-              show-word-limit
-              @select="(item: { value: string }) => formData[field.fieldName] = item.value"
-              clearable
-            />
-          </div>
-          <div v-else-if="field.fieldType === 'number'">
-            <el-input-number v-model.number="formData[field.fieldName]"
-              :placeholder="isViewMode && !formData[field.fieldName] ? '' : (field.placeholder || `请输入${field.fieldLabel}`)"
-              :min="field.min || 0" :max="field.max || 99999999" :precision="field.decimalPlaces || 0" />
-          </div>
-          <div v-else-if="field.fieldType === 'date'">
-            <el-date-picker v-model="formData[field.fieldName]" type="date"
-              :placeholder="isViewMode && !formData[field.fieldName] ? '' : '选择日期'" format="YYYY-MM-DD"
-              value-format="YYYY-MM-DD" />
-          </div>
-          <div v-else-if="field.fieldType === 'textarea'">
-            <el-input v-model="formData[field.fieldName]" type="textarea"
-              :placeholder="isViewMode && !formData[field.fieldName] ? '' : (field.placeholder || `请输入${field.fieldLabel}`)"
-              :rows="4" :maxlength="field.maxLength || 1000" show-word-limit />
-          </div>
-          <div v-else-if="field.fieldType === 'select' && field.options">
-            <el-select v-model="formData[field.fieldName]"
-              :placeholder="isViewMode && !formData[field.fieldName] ? '' : '请选择'" clearable>
-              <el-option v-for="option in parseOptions(field.options)" :key="option.value" :label="option.label"
-                :value="option.value" />
-            </el-select>
-          </div>
-          <div v-else-if="field.fieldType === 'checkbox'">
-            <el-checkbox v-model="formData[field.fieldName]">
-              {{ field.placeholder || field.fieldLabel }}
-            </el-checkbox>
-          </div>
-          <div v-else-if="field.fieldType === 'radio' && field.options">
-            <el-radio-group v-model="formData[field.fieldName]">
-              <el-radio v-for="option in parseOptions(field.options)" :key="option.value" :label="option.value">
-                {{ option.label }}
-              </el-radio>
-            </el-radio-group>
-          </div>
-        </el-form-item>
+
+        <!-- 修复类型错误：添加一个中间变量确保TypeScript能正确识别类型 -->
+        <template v-for="field in sortedMetadata" :key="field.fieldName">
+          <el-form-item v-if="field.fieldName !== 'avatar'" :label="`${field.fieldLabel}${field.required ? '*' : ''}`"
+            :prop="field.fieldName"
+            :rules="!isViewMode && field.required ? [{ required: true, message: `请输入${field.fieldLabel}`, trigger: 'blur' }] : []"
+            class="mb-4">
+            <div v-if="field.fieldType === 'text'">
+              <el-autocomplete v-model="formData[field.fieldName]"
+                :fetch-suggestions="(query: string, callback: (results: { value: string }[]) => void) => handleTextSuggestions(field.fieldName, query, callback)"
+                :placeholder="isViewMode && !formData[field.fieldName] ? '' : (field.placeholder ||
+                  `请输入${field.fieldLabel}`)" :maxlength="field.maxLength || 200" show-word-limit
+                @select="(item: { value: string }) => formData[field.fieldName] = item.value" clearable />
+            </div>
+            <div v-else-if="field.fieldType === 'number'">
+              <el-input-number v-model.number="formData[field.fieldName]"
+                :placeholder="isViewMode && !formData[field.fieldName] ? '' : (field.placeholder || `请输入${field.fieldLabel}`)"
+                :min="field.min || 0" :max="field.max || 99999999" :precision="field.decimalPlaces || 0" />
+            </div>
+            <div v-else-if="field.fieldType === 'date'">
+              <el-date-picker v-model="formData[field.fieldName]" type="date"
+                :placeholder="isViewMode && !formData[field.fieldName] ? '' : '选择日期'" format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD" />
+            </div>
+            <div v-else-if="field.fieldType === 'textarea'">
+              <el-input v-model="formData[field.fieldName]" type="textarea"
+                :placeholder="isViewMode && !formData[field.fieldName] ? '' : (field.placeholder || `请输入${field.fieldLabel}`)"
+                :rows="4" :maxlength="field.maxLength || 1000" show-word-limit />
+            </div>
+            <div v-else-if="field.fieldType === 'select' && field.options">
+              <el-select v-model="formData[field.fieldName]"
+                :placeholder="isViewMode && !formData[field.fieldName] ? '' : '请选择'" clearable>
+                <el-option v-for="option in parseOptions(field.options)" :key="option.value" :label="option.label"
+                  :value="option.value" />
+              </el-select>
+            </div>
+            <div v-else-if="field.fieldType === 'checkbox'">
+              <el-checkbox v-model="formData[field.fieldName]">
+                {{ field.placeholder || field.fieldLabel }}
+              </el-checkbox>
+            </div>
+            <div v-else-if="field.fieldType === 'radio' && field.options">
+              <el-radio-group v-model="formData[field.fieldName]">
+                <el-radio v-for="option in parseOptions(field.options)" :key="option.value" :label="option.value">
+                  {{ option.label }}
+                </el-radio>
+              </el-radio-group>
+            </div>
+          </el-form-item>
+        </template>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -257,6 +261,7 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import { useDynamicTableStore } from '../stores/dynamicTableStore';
 import type { DynamicTableRecord } from '../models/DynamicTableRecord';
 import { ElAutocomplete } from 'element-plus';
+import type { TableRowSelection } from 'element-plus';
 
 const store = useDynamicTableStore();
 
@@ -277,6 +282,7 @@ const showBatchDeleteModal = ref(false);
 const deleteRecordItem = ref<DynamicTableRecord | null>(null);
 const searchKeyword = ref('');
 const searchField = ref('');
+const sortField = ref('');
 const isSearching = ref(false);
 const isViewMode = ref(false);
 
@@ -293,6 +299,9 @@ const showFormModal = computed({
 
 // 表单数据
 const formData = reactive<Record<string, any>>({});
+
+// 计算总页数
+
 
 // 计算属性
 const isAllSelected = computed({
@@ -324,7 +333,7 @@ const exportAll = async () => {
       return;
     }
   }
-  
+
   const result = await store.exportAllData();
   if (result) {
     // 可以添加成功提示
@@ -432,7 +441,31 @@ const resetSearch = () => {
  */
 const changePage = (page: number) => {
   if (page < 1 || page > totalPages.value) return;
-  store.loadRecordsWithPage(page);
+  
+  // 根据当前的排序状态调用相应的分页加载方法
+  if (sortField.value === 'name') {
+    store.loadRecordsWithPageOrderByName(page, pageSize.value);
+  } else if (sortField.value === 'createTime') {
+    store.loadRecordsWithPageOrderByCreateTime(page, pageSize.value, 'DESC');
+  } else {
+    // 默认排序，使用创建时间升序
+    store.loadRecordsWithPageOrderByCreateTime(page, pageSize.value, 'ASC');
+  }
+};
+
+/**
+ * 处理排序请求
+ */
+const handleSort = async () => {
+  // 根据选择的排序字段调用不同的排序方法
+  if (sortField.value === 'name') {
+    await store.loadRecordsWithPageOrderByName(currentPage.value, pageSize.value);
+  } else if (sortField.value === 'createTime') {
+    await store.loadRecordsWithPageOrderByCreateTime(currentPage.value, pageSize.value, 'DESC');
+  } else {
+    // 默认排序，使用创建时间升序
+    await store.loadRecordsWithPageOrderByCreateTime(currentPage.value, pageSize.value, 'ASC');
+  }
 };
 
 /**
@@ -475,28 +508,28 @@ const handleAvatarSelect = async (uploadFile: any) => {
   try {
     const file = uploadFile.raw;
     console.log('选择的文件：', file);
-    
+
     // 文件类型校验
     const isImage = file.type.startsWith('image/');
     if (!isImage) {
       alert('请上传图片文件');
       return;
     }
-    
+
     // 文件大小校验
     const isLt2M = file.size / 1024 / 1024 < 2;
     if (!isLt2M) {
       alert('上传头像图片大小不能超过 2MB!');
       return;
     }
-    
+
     // 使用FileReader读取文件为Base64
     const reader = new FileReader();
     reader.readAsDataURL(file);
-    
+
     reader.onload = async () => {
       const base64Image = reader.result as string;
-      
+
       // 如果是编辑模式，调用上传头像API
       if (store.currentRecord?.id) {
         const result = await store.uploadAvatar(store.currentRecord.id.toString(), base64Image);
@@ -512,7 +545,7 @@ const handleAvatarSelect = async (uploadFile: any) => {
         formData.avatar = base64Image;
       }
     };
-    
+
     reader.onerror = () => {
       alert('图片读取失败，请重试');
     };
@@ -535,6 +568,15 @@ const showDeleteConfirm = (record: DynamicTableRecord) => {
  */
 const showBatchDeleteConfirm = () => {
   showBatchDeleteModal.value = true;
+};
+
+/**
+ * 新增记录
+ */
+const addRecord = () => {
+  resetForm(); // 重置表单，设置头像默认值
+  isViewMode.value = false;
+  showAddModal.value = true;
 };
 
 /**
@@ -578,7 +620,7 @@ const resetForm = () => {
         formData[field.fieldName] = field.defaultValue;
       }
     });
-    
+
     // 设置头像默认值
     formData.avatar = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
   }
@@ -590,7 +632,7 @@ const resetForm = () => {
 const saveRecord = async () => {
   // 创建表单数据副本，确保包含头像信息
   const recordData = { ...formData };
-  
+
   // 构建记录对象
   const record: DynamicTableRecord = {
     tableKey: store.currentTableKey,
@@ -638,12 +680,23 @@ const confirmDelete = async () => {
  * 确认批量删除
  */
 const confirmBatchDelete = async () => {
+  console.log('尝试批量删除');
   const result = await store.deleteSelectedRecords();
   if (result) {
     closeBatchDeleteModal();
   } else {
     alert('删除失败，请重试');
   }
+};
+
+/**
+ * 处理表格选择变更事件
+ */
+const handleSelectionChange = (selection: DynamicTableRecord[]) => {
+  // 从选中的记录中提取ID数组
+  const ids = selection.map(record => record.id || 0).filter(id => id !== 0);
+  // 更新store中的选中ID
+  store.selectedIds = ids;
 };
 
 // 初始化时加载数据
@@ -687,6 +740,19 @@ onMounted(() => {
   --el-button-border-color: var(--el-color-primary) !important;
 }
 
+/* 按钮组优化 */
+:deep(.sort-container + .el-button-group),
+:deep(.sort-container + .el-button) {
+  margin-top: 10px;
+}
+
+/* 确保所有操作按钮在小屏幕上垂直排列 */
+@media (max-width: 768px) {
+  .sort-container {
+    margin-bottom: 15px;
+  }
+}
+
 .action-buttons {
   display: flex;
   flex-direction: column;
@@ -696,51 +762,73 @@ onMounted(() => {
 }
 
 .action-buttons .el-button {
-    width: 70%;
-    padding: 6px 12px !important;
-    text-align: center !important;
-    box-sizing: border-box !important;
-    margin: 0 !important;
-  }
-  
-  /* 头像上传样式 */
-  .avatar-upload-container {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    flex-wrap: wrap;
-  }
-  
-  .avatar-preview {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 2px solid #ddd;
-    background-color: #f5f5f5;
-  }
-  
-  .avatar-image {
+  width: 70%;
+  padding: 6px 12px !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+}
+
+/* 头像上传样式 */
+.avatar-upload-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.avatar-preview {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #ddd;
+  background-color: #f5f5f5;
+}
+
+.avatar-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
   
-  /* 生日选择器样式调整 */
-  .el-date-editor {
-    width: auto !important;
-    max-width: 200px;
+  /* 表格中头像样式 */
+  .table-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0 auto;
   }
   
-  .el-date-editor .el-input__wrapper {
-    width: 200px !important;
+  .table-avatar-placeholder {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 12px;
+    margin: 0 auto;
   }
-  
-  /* 调整模态框内表单元素的最大宽度 */
-  .el-form-item .el-input,
-  .el-form-item .el-select,
-  .el-form-item .el-cascader,
-  .el-form-item .el-date-editor {
-    max-width: 300px;
-  }
+
+/* 生日选择器样式调整 */
+.el-date-editor {
+  width: auto !important;
+  max-width: 200px;
+}
+
+.el-date-editor .el-input__wrapper {
+  width: 200px !important;
+}
+
+/* 调整模态框内表单元素的最大宽度 */
+.el-form-item .el-input,
+.el-form-item .el-select,
+.el-form-item .el-cascader,
+.el-form-item .el-date-editor {
+  max-width: 300px;
+}
 </style>

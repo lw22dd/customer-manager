@@ -44,6 +44,18 @@ export default class DynamicTableApi {
     }
 
     /**
+     * 获取表的所有记录，按创建时间排序
+     */
+    public static async getRecordsByTableKeyOrderByCreateTime(
+        tableKey: string,
+        orderBy: string = "DESC"
+    ): Promise<Result<DynamicTableRecord[]>> {
+        return await Axios.get(`/dynamic-table/record/${tableKey}/sortByCreateTime`, {
+            params: { orderBy }
+        });
+    }
+
+    /**
      * 分页获取表的记录
      */
     public static async getRecordsByTableKeyWithPage(
@@ -53,6 +65,33 @@ export default class DynamicTableApi {
     ): Promise<Result<PagingResult<DynamicTableRecord>>> {
         return await Axios.get(`/dynamic-table/record/${tableKey}/page`, {
             params: { page, size }
+        });
+    }
+
+    /**
+     * 分页获取表的记录，按姓名首字母排序
+     */
+    public static async getRecordsByTableKeyWithPageOrderByName(
+        tableKey: string,
+        page: number = 1,
+        size: number = 10
+    ): Promise<Result<PagingResult<DynamicTableRecord>>> {
+        return await Axios.get(`/dynamic-table/record/${tableKey}/page/sortByName`, {
+            params: { page, size }
+        });
+    }
+
+    /**
+     * 分页获取表的记录，按创建时间排序
+     */
+    public static async getRecordsByTableKeyWithPageOrderByCreateTime(
+        tableKey: string,
+        page: number = 1,
+        size: number = 10,
+        orderBy: string = "DESC"
+    ): Promise<Result<PagingResult<DynamicTableRecord>>> {
+        return await Axios.get(`/dynamic-table/record/${tableKey}/page/sortByCreateTime`, {
+            params: { page, size, orderBy }
         });
     }
 
@@ -68,6 +107,15 @@ export default class DynamicTableApi {
      */
     public static async deleteRecord(id: number): Promise<Result<boolean>> {
         return await Axios.delete(`/dynamic-table/record/${id}`);
+    }
+
+    /**
+     * 批量删除记录
+     */
+    public static async deleteRecords(ids: number[]): Promise<Result<boolean>> {
+        // 直接发送ID数组，而不是嵌套在data对象中
+        console.log('deleteRecords', ids);
+        return await Axios.post('/dynamic-table/record/batch', ids);
     }
 
     // ==================== 搜索功能 ====================

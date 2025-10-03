@@ -62,6 +62,7 @@ public class JwtInterceptor implements HandlerInterceptor {
         }
         
         // token验证通过，放行
+        System.out.println("[JwtInterceptor] 验证通过，放行请求URI：" + requestURI);
         return true;
     }
 }

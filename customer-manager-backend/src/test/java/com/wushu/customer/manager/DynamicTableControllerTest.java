@@ -18,7 +18,9 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -167,6 +169,51 @@ public class DynamicTableControllerTest {
     }
 
     @Test
+    public void testGetRecordsByTableKeyOrderByName() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        String token = getJwtToken();
+
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.get("/dynamic-table/record/test_table/sortByName")
+                .header("Authorization", "Bearer " + token))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = result.getResponse().getContentAsString();
+        System.out.println("按姓名排序获取记录响应: " + responseContent);
+
+        // 验证响应内容
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(responseContent);
+        assertTrue(jsonNode.get("code").asInt() == 200);
+
+        System.out.println("按姓名排序获取记录测试完成！");
+    }
+
+    @Test
+    public void testGetRecordsByTableKeyOrderByCreateTime() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        String token = getJwtToken();
+
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.get("/dynamic-table/record/test_table/sortByCreateTime")
+                .header("Authorization", "Bearer " + token)
+                .param("orderBy", "ASC"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = result.getResponse().getContentAsString();
+        System.out.println("按创建时间排序获取记录响应: " + responseContent);
+
+        // 验证响应内容
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(responseContent);
+        assertTrue(jsonNode.get("code").asInt() == 200);
+
+        System.out.println("按创建时间排序获取记录测试完成！");
+    }
+
+    @Test
     public void testGetRecordsByTableKeyWithPage() throws Exception {
         MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
         String token = getJwtToken();
@@ -188,6 +235,55 @@ public class DynamicTableControllerTest {
         assertTrue(jsonNode.get("code").asInt() == 200);
 
         System.out.println("分页获取记录测试完成！");
+    }
+
+    @Test
+    public void testGetRecordsByTableKeyWithPageOrderByName() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        String token = getJwtToken();
+
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.get("/dynamic-table/record/test_table/page/sortByName")
+                .header("Authorization", "Bearer " + token)
+                .param("page", "1")
+                .param("size", "10"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = result.getResponse().getContentAsString();
+        System.out.println("分页按姓名排序获取记录响应: " + responseContent);
+
+        // 验证响应内容
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(responseContent);
+        assertTrue(jsonNode.get("code").asInt() == 200);
+
+        System.out.println("分页按姓名排序获取记录测试完成！");
+    }
+
+    @Test
+    public void testGetRecordsByTableKeyWithPageOrderByCreateTime() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        String token = getJwtToken();
+
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.get("/dynamic-table/record/test_table/page/sortByCreateTime")
+                .header("Authorization", "Bearer " + token)
+                .param("page", "1")
+                .param("size", "10")
+                .param("orderBy", "DESC"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andDo(print())
+                .andReturn();
+
+        String responseContent = result.getResponse().getContentAsString();
+        System.out.println("分页按创建时间排序获取记录响应: " + responseContent);
+
+        // 验证响应内容
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(responseContent);
+        assertTrue(jsonNode.get("code").asInt() == 200);
+
+        System.out.println("分页按创建时间排序获取记录测试完成！");
     }
 
     @Test
@@ -250,6 +346,90 @@ public class DynamicTableControllerTest {
             System.out.println("删除记录测试完成！");
         } else {
             System.out.println("没有找到可以删除的记录");
+        }
+    }
+
+    /**
+     * 批量删除记录
+     * @throws Exception
+     */
+    @Test
+    public void testBatchDeleteRecords() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        String token = getJwtToken();
+
+        // 先创建几条测试记录
+        List<Long> recordIds = new ArrayList<>();
+        
+        for (int i = 0; i < 3; i++) {
+            // 创建记录
+            DynamicTableRecord record = new DynamicTableRecord();
+            record.setTableKey("test_table");
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("name", "测试用户" + i);
+            record.setData(data);
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            String recordJson = objectMapper.writeValueAsString(record);
+
+            MvcResult saveResult = mockMvc.perform(MockMvcRequestBuilders.post("/dynamic-table/record")
+                    .header("Authorization", "Bearer " + token)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(recordJson))
+                    .andExpect(MockMvcResultMatchers.status().isOk())
+                    .andReturn();
+
+            String saveResponseContent = saveResult.getResponse().getContentAsString();
+            JsonNode saveJsonNode = objectMapper.readTree(saveResponseContent);
+            
+            if (saveJsonNode.get("code").asInt() == 200) {
+                // 获取创建的记录ID
+                MvcResult getResult = mockMvc.perform(MockMvcRequestBuilders.get("/dynamic-table/record/test_table")
+                        .header("Authorization", "Bearer " + token))
+                        .andExpect(MockMvcResultMatchers.status().isOk())
+                        .andReturn();
+
+                String getResponseContent = getResult.getResponse().getContentAsString();
+                JsonNode getJsonNode = objectMapper.readTree(getResponseContent);
+                
+                if (getJsonNode.get("code").asInt() == 200 && getJsonNode.get("data").isArray() && getJsonNode.get("data").size() > 0) {
+                    // 获取最新创建的记录ID
+                    for (int j = getJsonNode.get("data").size() - 1; j >= 0; j--) {
+                        JsonNode recordNode = getJsonNode.get("data").get(j);
+                        String name = recordNode.get("data").get("name").asText();
+                        if (name.equals("测试用户" + i)) {
+                            recordIds.add(recordNode.get("id").asLong());
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 执行批量删除
+        if (!recordIds.isEmpty()) {
+            ObjectMapper objectMapper = new ObjectMapper();
+            String idsJson = objectMapper.writeValueAsString(recordIds);
+
+            MvcResult result = mockMvc.perform(MockMvcRequestBuilders.delete("/dynamic-table/record/batch")
+                    .header("Authorization", "Bearer " + token)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(idsJson))
+                    .andExpect(MockMvcResultMatchers.status().isOk())
+                    .andDo(print())
+                    .andReturn();
+
+            String responseContent = result.getResponse().getContentAsString();
+            System.out.println("批量删除记录响应: " + responseContent);
+
+            // 验证响应内容
+            JsonNode deleteJsonNode = objectMapper.readTree(responseContent);
+            assertTrue(deleteJsonNode.get("code").asInt() == 200);
+
+            System.out.println("批量删除记录测试完成！");
+        } else {
+            System.out.println("没有创建到可以删除的记录");
         }
     }
 

@@ -69,9 +69,43 @@ public class DynamicTableServiceImpl implements DynamicTableService {
     }
     
     @Override
+    public List<DynamicTableRecord> getRecordsByTableKeyOrderByName(String tableKey) {
+        return recordMapper.findByTableKeyOrderByName(tableKey);
+    }
+    
+    @Override
+    public List<DynamicTableRecord> getRecordsByTableKeyOrderByCreateTime(String tableKey, String orderBy) {
+        // 验证orderBy参数
+        if (!"ASC".equalsIgnoreCase(orderBy) && !"DESC".equalsIgnoreCase(orderBy)) {
+            orderBy = "DESC"; // 默认倒序
+        }
+        return recordMapper.findByTableKeyOrderByCreateTime(tableKey, orderBy.toUpperCase());
+    }
+    
+    @Override
     public PagingResult<DynamicTableRecord> getRecordsByTableKeyWithPage(String tableKey, int page, int size) {
         int offset = (page - 1) * size;
         List<DynamicTableRecord> records = recordMapper.findByTableKeyWithPage(tableKey, offset, size);
+        long totalCount = recordMapper.countByTableKey(tableKey);
+        return new PagingResult<>(records, totalCount, page, size);
+    }
+    
+    @Override
+    public PagingResult<DynamicTableRecord> getRecordsByTableKeyWithPageOrderByName(String tableKey, int page, int size) {
+        int offset = (page - 1) * size;
+        List<DynamicTableRecord> records = recordMapper.findByTableKeyWithPageOrderByName(tableKey, offset, size);
+        long totalCount = recordMapper.countByTableKey(tableKey);
+        return new PagingResult<>(records, totalCount, page, size);
+    }
+    
+    @Override
+    public PagingResult<DynamicTableRecord> getRecordsByTableKeyWithPageOrderByCreateTime(String tableKey, int page, int size, String orderBy) {
+        // 验证orderBy参数
+        if (!"ASC".equalsIgnoreCase(orderBy) && !"DESC".equalsIgnoreCase(orderBy)) {
+            orderBy = "DESC"; // 默认倒序
+        }
+        int offset = (page - 1) * size;
+        List<DynamicTableRecord> records = recordMapper.findByTableKeyWithPageOrderByCreateTime(tableKey, offset, size, orderBy.toUpperCase());
         long totalCount = recordMapper.countByTableKey(tableKey);
         return new PagingResult<>(records, totalCount, page, size);
     }
@@ -84,6 +118,11 @@ public class DynamicTableServiceImpl implements DynamicTableService {
     @Override
     public boolean deleteRecord(Long id) {
         return recordMapper.deleteById(id) > 0;
+    }
+    
+    @Override
+    public boolean batchDeleteRecords(List<Long> ids) {
+        return recordMapper.batchDeleteByIds(ids) > 0;
     }
     
     @Override

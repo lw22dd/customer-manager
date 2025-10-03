@@ -17,6 +17,21 @@ public interface DynamicTableRecordMapper {
     List<DynamicTableRecord> findByTableKey(@Param("tableKey") String tableKey);
     
     /**
+     * 根据表标识获取所有记录，按姓名首字母排序
+     * @param tableKey 表唯一标识
+     * @return 记录列表
+     */
+    List<DynamicTableRecord> findByTableKeyOrderByName(@Param("tableKey") String tableKey);
+    
+    /**
+     * 根据表标识获取所有记录，按创建时间排序
+     * @param tableKey 表唯一标识
+     * @param order 排序方式：ASC-正序，DESC-倒序
+     * @return 记录列表
+     */
+    List<DynamicTableRecord> findByTableKeyOrderByCreateTime(@Param("tableKey") String tableKey, @Param("order") String order);
+    
+    /**
      * 分页获取记录
      * @param tableKey 表唯一标识
      * @param offset 偏移量
@@ -24,6 +39,25 @@ public interface DynamicTableRecordMapper {
      * @return 记录列表
      */
     List<DynamicTableRecord> findByTableKeyWithPage(@Param("tableKey") String tableKey, @Param("offset") int offset, @Param("limit") int limit);
+    
+    /**
+     * 分页获取记录，按姓名首字母排序
+     * @param tableKey 表唯一标识
+     * @param offset 偏移量
+     * @param limit 限制数量
+     * @return 记录列表
+     */
+    List<DynamicTableRecord> findByTableKeyWithPageOrderByName(@Param("tableKey") String tableKey, @Param("offset") int offset, @Param("limit") int limit);
+    
+    /**
+     * 分页获取记录，按创建时间排序
+     * @param tableKey 表唯一标识
+     * @param offset 偏移量
+     * @param limit 限制数量
+     * @param order 排序方式：ASC-正序，DESC-倒序
+     * @return 记录列表
+     */
+    List<DynamicTableRecord> findByTableKeyWithPageOrderByCreateTime(@Param("tableKey") String tableKey, @Param("offset") int offset, @Param("limit") int limit, @Param("order") String order);
     
     /**
      * 根据表标识统计记录总数
@@ -76,6 +110,13 @@ public interface DynamicTableRecordMapper {
      * @return 影响行数
      */
     int deleteById(Long id);
+    
+    /**
+     * 批量删除记录
+     * @param ids 记录ID列表
+     * @return 影响行数
+     */
+    int batchDeleteByIds(@Param("ids") List<Long> ids);
     
     /**
      * 根据表标识删除所有记录

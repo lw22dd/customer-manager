@@ -22,6 +22,10 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   const currentPage = ref<number>(1); // 当前页码
   const pageSize = ref<number>(10); // 每页条数
   const totalRecords = ref<number>(0); // 总记录数
+  // 排序相关状态
+  const sortField = ref<string>(''); // 排序字段
+  const sortOrder = ref<string>('DESC'); // 排序方向
+
 
 
 
@@ -68,6 +72,9 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     searchField.value = '';
     currentPage.value = 1;
     totalRecords.value = 0;
+    // 重置排序状态
+    sortField.value = '';
+    sortOrder.value = 'DESC';
   };
 
   /**
@@ -172,6 +179,35 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   };
 
   /**
+   * 加载表记录并按创建时间排序
+   */
+  const loadRecordsOrderByCreateTime = async (tableKey?: string, orderBy: string = 'DESC') => {
+    const key = tableKey || currentTableKey.value;
+    isLoading.value = true;
+    try {
+      const response = await DynamicTableApi.getRecordsByTableKeyOrderByCreateTime(key, orderBy);
+      console.log('按创建时间排序的表记录结果:', response);
+      if (response.code === 200 && response.data) {
+        records.value = response.data;
+        totalRecords.value = response.data.length;
+        // 更新排序状态
+        sortField.value = 'createTime';
+        sortOrder.value = orderBy;
+      } else {
+        console.warn('加载排序记录失败:', response.msg);
+        records.value = [];
+        totalRecords.value = 0;
+      }
+      // 应用搜索
+      applySearch();
+    } catch (error) {
+      console.error('加载排序记录失败:', error);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  /**
    * 分页加载表记录
    */
   const loadRecordsWithPage = async (page?: number, size?: number) => {
@@ -205,6 +241,60 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   };
 
   /**
+   * 分页加载表记录并按姓名首字母排序
+   */
+  const loadRecordsWithPageOrderByName = async (page?: number, size?: number) => {
+    const p = page || currentPage.value;
+    const s = size || pageSize.value;
+    currentPage.value = p;
+    isLoading.value = true;
+    try {
+      const response = await DynamicTableApi.getRecordsByTableKeyWithPageOrderByName(currentTableKey.value, p, s);
+      console.log('按姓名首字母排序的分页表记录结果:', response.data);
+      if (response.code === 200 && response.data) {
+        pagedRecords.value = response.data;
+        records.value = response.data.items || [];
+        pageSize.value = response.data.size || s;
+        totalRecords.value = response.data.totalCount || records.value.length;
+        // 更新排序状态
+        sortField.value = 'name';
+        sortOrder.value = 'ASC'; // 姓名排序默认升序
+      }
+    } catch (error) {
+      console.error('分页加载姓名排序记录失败:', error);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  /**
+   * 分页加载表记录并按创建时间排序
+   */
+  const loadRecordsWithPageOrderByCreateTime = async (page?: number, size?: number, orderBy: string = 'DESC') => {
+    const p = page || currentPage.value;
+    const s = size || pageSize.value;
+    currentPage.value = p;
+    isLoading.value = true;
+    try {
+      const response = await DynamicTableApi.getRecordsByTableKeyWithPageOrderByCreateTime(currentTableKey.value, p, s, orderBy);
+      console.log('按创建时间排序的分页表记录结果:', response.data);
+      if (response.code === 200 && response.data) {
+        pagedRecords.value = response.data;
+        records.value = response.data.items || [];
+        pageSize.value = response.data.size || s;
+        totalRecords.value = response.data.totalCount || records.value.length;
+        // 更新排序状态
+        sortField.value = 'createTime';
+        sortOrder.value = orderBy;
+      }
+    } catch (error) {
+      console.error('分页加载创建时间排序记录失败:', error);
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  /**
    * 设置当前操作的记录
    */
   const setCurrentRecord = (record: DynamicTableRecord | null) => {
@@ -217,29 +307,21 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   const saveRecord = async (record: DynamicTableRecord): Promise<{ success: boolean; reason?: string; message?: string }> => {
     isLoading.value = true;
     try {
-      // 检查姓名重复（排除当前编辑的记录）
-      const searchResponseByName = await DynamicTableApi.searchByFieldAndKeyword(currentTableKey.value, 'name', record.data.name);
-      console.log('名称搜索结果:', searchResponseByName);
-      console.log('搜索结果长度:', searchResponseByName.data?.length);
-      if (searchResponseByName.code === 200 && searchResponseByName.data && searchResponseByName.data.length > 0) {
-        // 过滤掉当前编辑的记录
-        const otherRecords = searchResponseByName.data.filter((r: DynamicTableRecord) => r.id !== record.id);
-        console.log('其他匹配记录数量:', otherRecords.length);
-        
-        if (otherRecords.length > 0) {
+      // 只有在新增记录时进行重复检查（没有ID即为新增记录）
+      if (!record.id) {
+        // 检查姓名重复
+        const searchResponseByName = await DynamicTableApi.searchByFieldAndKeyword(currentTableKey.value, 'name', record.data.name);
+        console.log('名称搜索结果:', searchResponseByName);
+        console.log('搜索结果长度:', searchResponseByName.data?.length);
+        if (searchResponseByName.code === 200 && searchResponseByName.data && searchResponseByName.data.length > 0) {
           console.warn('名称已存在:', record.data.name);
           return { success: false, reason: 'nameDuplicate' };
         }
-      }
-      
-      // 检查手机号重复（排除当前编辑的记录）
-      const searchResponseByPhone = await DynamicTableApi.searchByFieldAndKeyword(currentTableKey.value, 'phone', record.data.phone);
-      console.log('手机号搜索结果:', searchResponseByPhone);
-      if (searchResponseByPhone.code === 200 && searchResponseByPhone.data && searchResponseByPhone.data.length > 0) {
-        // 过滤掉当前编辑的记录
-        const otherRecords = searchResponseByPhone.data.filter((r: DynamicTableRecord) => r.id !== record.id);
-        
-        if (otherRecords.length > 0) {
+
+        // 检查手机号重复
+        const searchResponseByPhone = await DynamicTableApi.searchByFieldAndKeyword(currentTableKey.value, 'phone', record.data.phone);
+        console.log('手机号搜索结果:', searchResponseByPhone);
+        if (searchResponseByPhone.code === 200 && searchResponseByPhone.data && searchResponseByPhone.data.length > 0) {
           console.warn('手机号已存在:', record.data.phone);
           return { success: false, reason: 'phoneDuplicate' };
         }
@@ -251,7 +333,14 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
 
         const defaultPageSize = 10; // 默认每页显示10条数据
         pageSize.value = defaultPageSize;
-        await loadRecordsWithPage(1, defaultPageSize);
+        // 根据当前排序状态决定调用哪个加载方法
+        if (sortField.value === 'name') {
+          await loadRecordsWithPageOrderByName(1, defaultPageSize);
+        } else if (sortField.value === 'createTime') {
+          await loadRecordsWithPageOrderByCreateTime(1, defaultPageSize, sortOrder.value);
+        } else {
+          await loadRecordsWithPage(1, defaultPageSize);
+        }
 
         return { success: true };
       }
@@ -277,7 +366,14 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
       const response = await DynamicTableApi.deleteRecord(id);
       console.log('删除记录结果:', response);
       if (response.code === 200 && response.data) {
-        await loadRecordsWithPage(currentPage.value, 10);
+        // 根据当前排序状态决定调用哪个加载方法
+        if (sortField.value === 'name') {
+          await loadRecordsWithPageOrderByName(currentPage.value, 10);
+        } else if (sortField.value === 'createTime') {
+          await loadRecordsWithPageOrderByCreateTime(currentPage.value, 10, sortOrder.value);
+        } else {
+          await loadRecordsWithPage(currentPage.value, 10);
+        }
         return true;
       }
 
@@ -298,16 +394,29 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
    */
   const deleteSelectedRecords = async () => {
     if (selectedIds.value.length === 0) return false;
+    console.log('尝试批量删除2');
 
     isLoading.value = true;
     try {
-      // 依次删除（实际环境可以考虑批量删除API）
-      for (const id of selectedIds.value) {
-        await deleteRecord(id);
+      // 使用批量删除API
+      console.log('批量删除的ID:', selectedIds.value);
+      const response = await DynamicTableApi.deleteRecords(selectedIds.value);
+      console.log('批量删除记录结果:', response);
+      if (response.code === 200 && response.data) {
+        // 根据当前排序状态决定调用哪个加载方法
+        if (sortField.value === 'name') {
+          await loadRecordsWithPageOrderByName(currentPage.value, 10);
+        } else if (sortField.value === 'createTime') {
+          await loadRecordsWithPageOrderByCreateTime(currentPage.value, 10, sortOrder.value);
+        } else {
+          await loadRecordsWithPage(currentPage.value, 10);
+        }
+        selectedIds.value = [];
+        return true;
+      } else {
+        console.warn('批量删除记录失败:', response.msg);
+        return false;
       }
-
-      selectedIds.value = [];
-      return true;
     } catch (error) {
       console.error('删除选中记录失败:', error);
     } finally {
@@ -424,227 +533,255 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   /**
      * 导出当前页数据
      */
-    const exportCurrentPageData = async () => {
-      isLoading.value = true;
-      try {
-        const exportData = prepareExportData(records.value);
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, currentTableKey.value);
-        
-        // 添加表头信息（元数据）
-        const metadataWorksheet = XLSX.utils.json_to_sheet(
-          metadataList.value.map(field => ({
-            字段名称: field.fieldName,
-            字段标签: field.fieldLabel,
-            字段类型: field.fieldType,
-            是否必填: field.required ? '是' : '否',
-            默认值: field.defaultValue || '-',
-            最大长度: field.maxLength || '-',
-            排序: field.sortOrder || 999
-          }))
-        );
-        XLSX.utils.book_append_sheet(workbook, metadataWorksheet, '表结构信息');
-        
-        // 导出文件
-        XLSX.writeFile(workbook, `${currentTableKey.value}_数据_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.xlsx`);
-        return true;
-      } catch (error) {
-        console.error('导出当前页数据失败:', error);
-        return false;
-      } finally {
-        isLoading.value = false;
-      }
-    };
+  const exportCurrentPageData = async () => {
+    isLoading.value = true;
+    try {
+      const exportData = prepareExportData(records.value);
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, currentTableKey.value);
 
-    /**
-     * 导出所有数据
-     */
-    const exportAllData = async () => {
-      isLoading.value = true;
-      try {
-        let allRecords: DynamicTableRecord[] = [];
-        let currentPageNum = 1;
-        const pageSizeNum = 100; // 每页100条，防止一次性加载过多数据
-        let hasMoreData = true;
+      // 添加表头信息（元数据）
+      const metadataWorksheet = XLSX.utils.json_to_sheet(
+        metadataList.value.map(field => ({
+          字段名称: field.fieldName,
+          字段标签: field.fieldLabel,
+          字段类型: field.fieldType,
+          是否必填: field.required ? '是' : '否',
+          默认值: field.defaultValue || '-',
+          最大长度: field.maxLength || '-',
+          排序: field.sortOrder || 999
+        }))
+      );
+      XLSX.utils.book_append_sheet(workbook, metadataWorksheet, '表结构信息');
 
-        // 分页加载所有数据
-        while (hasMoreData) {
-          const response = await DynamicTableApi.getRecordsByTableKeyWithPage(
-            currentTableKey.value,
-            currentPageNum,
-            pageSizeNum
-          );
-          
-          if (response.code === 200 && response.data && response.data.items) {
-            const pageRecords = response.data.items;
-            allRecords = [...allRecords, ...pageRecords];
-            
-            // 检查是否还有更多数据
-            hasMoreData = pageRecords.length === pageSizeNum;
-            currentPageNum++;
-          } else {
-            hasMoreData = false;
-          }
-        }
+      // 导出文件
+      XLSX.writeFile(workbook, `${currentTableKey.value}_数据_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.xlsx`);
+      return true;
+    } catch (error) {
+      console.error('导出当前页数据失败:', error);
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  };
 
-        // 如果有搜索条件，应用搜索
-        if (searchKeyword.value.trim()) {
-          const searchResponse = searchField.value
-            ? await DynamicTableApi.searchByFieldAndKeyword(
-                currentTableKey.value,
-                searchField.value,
-                searchKeyword.value
-              )
-            : await DynamicTableApi.searchByKeyword(
-                currentTableKey.value,
-                searchKeyword.value
-              );
-          
-          if (searchResponse.code === 200 && searchResponse.data) {
-            allRecords = searchResponse.data;
-          }
-        }
-
-        // 导出数据
-        const exportData = prepareExportData(allRecords);
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, currentTableKey.value);
-        
-        // 添加表头信息（元数据）
-        const metadataWorksheet = XLSX.utils.json_to_sheet(
-          metadataList.value.map(field => ({
-            字段名称: field.fieldName,
-            字段标签: field.fieldLabel,
-            字段类型: field.fieldType,
-            是否必填: field.required ? '是' : '否',
-            默认值: field.defaultValue || '-',
-            最大长度: field.maxLength || '-',
-            排序: field.sortOrder || 999
-          }))
-        );
-        XLSX.utils.book_append_sheet(workbook, metadataWorksheet, '表结构信息');
-        
-        // 导出文件
-        XLSX.writeFile(workbook, `${currentTableKey.value}_全量数据_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.xlsx`);
-        return true;
-      } catch (error) {
-        console.error('导出所有数据失败:', error);
-        return false;
-      } finally {
-        isLoading.value = false;
-      }
-    };
-
-    /**
-     * 导出选中的数据
-     */
-    const exportSelectedData = async () => {
-      if (selectedIds.value.length === 0) return false;
+  /**
+   * 导出所有数据
+   */
+  const exportAllData = async () => {
+    isLoading.value = true;
+    try {
+      let allRecords: DynamicTableRecord[] = [];
       
-      isLoading.value = true;
-      try {
-        // 从当前记录中过滤出选中的记录
-        const selectedRecords = records.value.filter(
-          record => record.id && selectedIds.value.includes(record.id)
-        );
-        
-        // 导出数据
-        const exportData = prepareExportData(selectedRecords);
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, currentTableKey.value);
-        
-        // 导出文件
-        XLSX.writeFile(workbook, `${currentTableKey.value}_选中数据_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.xlsx`);
-        return true;
-      } catch (error) {
-        console.error('导出选中数据失败:', error);
-        return false;
-      } finally {
-        isLoading.value = false;
-      }
-    };
+      // 检查是否有搜索条件
+      if (searchKeyword.value.trim()) {
+        // 有搜索条件，直接通过搜索API获取数据
+        const searchResponse = searchField.value
+          ? await DynamicTableApi.searchByFieldAndKeyword(
+            currentTableKey.value,
+            searchField.value,
+            searchKeyword.value
+          )
+          : await DynamicTableApi.searchByKeyword(
+            currentTableKey.value,
+            searchKeyword.value
+          );
 
-    /**
-     * 准备导出数据
-     */
-    const prepareExportData = (records: DynamicTableRecord[]) => {
-      // 创建字段名到字段标签的映射
-      const fieldLabelMap: Record<string, string> = {};
-      metadataList.value.forEach(field => {
-        fieldLabelMap[field.fieldName] = field.fieldLabel;
-      });
-
-      // 处理导出数据格式
-      return records.map(record => {
-        const exportRow: Record<string, any> = {};
-        
-        // 添加ID字段
-        if (record.id) {
-          exportRow['ID'] = record.id;
+        if (searchResponse.code === 200 && searchResponse.data) {
+          allRecords = searchResponse.data;
         }
-        
-        // 添加其他字段，使用字段标签作为表头
-        if (record.data) {
-          Object.entries(record.data).forEach(([fieldName, value]) => {
-            // 使用字段标签作为键名
-            const label = fieldLabelMap[fieldName] || fieldName;
-            
-            // 处理不同类型的值
-            if (value === null || value === undefined) {
-              exportRow[label] = '';
-            } else if (typeof value === 'object') {
-              exportRow[label] = JSON.stringify(value);
+      } else {
+        // 没有搜索条件，根据当前排序状态选择不同的API获取数据
+        if (sortField.value === 'name') {
+          // 按姓名首字母排序
+          const response = await DynamicTableApi.getRecordsByTableKey(currentTableKey.value);
+          if (response.code === 200 && response.data) {
+            // 前端按姓名首字母排序
+            allRecords = response.data.sort((a, b) => {
+              const nameA = a.data?.name?.charAt(0).toUpperCase() || '';
+              const nameB = b.data?.name?.charAt(0).toUpperCase() || '';
+              return nameA.localeCompare(nameB);
+            });
+          }
+        } else if (sortField.value === 'createTime') {
+          // 按创建时间排序
+          const response = await DynamicTableApi.getRecordsByTableKeyOrderByCreateTime(currentTableKey.value, sortOrder.value);
+          if (response.code === 200 && response.data) {
+            allRecords = response.data;
+          }
+        } else {
+          // 默认排序，分页加载所有数据
+          let currentPageNum = 1;
+          const pageSizeNum = 100; // 每页100条，防止一次性加载过多数据
+          let hasMoreData = true;
+
+          while (hasMoreData) {
+            const response = await DynamicTableApi.getRecordsByTableKeyWithPage(
+              currentTableKey.value,
+              currentPageNum,
+              pageSizeNum
+            );
+
+            if (response.code === 200 && response.data && response.data.items) {
+              const pageRecords = response.data.items;
+              allRecords = [...allRecords, ...pageRecords];
+
+              // 检查是否还有更多数据
+              hasMoreData = pageRecords.length === pageSizeNum;
+              currentPageNum++;
             } else {
-              exportRow[label] = value;
+              hasMoreData = false;
             }
-          });
+          }
         }
-        
-        return exportRow;
-      });
-    };
+      }
 
-    // 暴露状态和方法
-    return {
-      // 状态
-      currentTableKey,
-      metadataList,
-      sortedMetadata,
-      records,
-      pagedRecords,
-      currentRecord,
-      selectedIds,
-      isAllSelected,
-      isLoading,
-      searchKeyword,
-      searchField,
-      currentPage,
-      pageSize,
-      totalRecords,
+      // 导出数据
+      const exportData = prepareExportData(allRecords);
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, currentTableKey.value);
 
-      // 方法
-      setCurrentTableKey,
-      resetState,
-      loadMetadata,
-      saveMetadata,
-      deleteMetadata,
-      uploadAvatar,
-      loadRecords,
-      loadRecordsWithPage,
-      setCurrentRecord,
-      saveRecord,
-      deleteRecord,
-      deleteSelectedRecords,
-      toggleSelect,
-      setSearchParams,
-      applySearch,
-      initTable,
-      exportCurrentPageData,
-      exportAllData,
-      exportSelectedData
+      // 添加表头信息（元数据）
+      const metadataWorksheet = XLSX.utils.json_to_sheet(
+        metadataList.value.map(field => ({
+          字段名称: field.fieldName,
+          字段标签: field.fieldLabel,
+          字段类型: field.fieldType,
+          是否必填: field.required ? '是' : '否',
+          默认值: field.defaultValue || '-',
+          最大长度: field.maxLength || '-',
+          排序: field.sortOrder || 999
+        }))
+      );
+      XLSX.utils.book_append_sheet(workbook, metadataWorksheet, '表结构信息');
 
-    };
+      // 导出文件
+      XLSX.writeFile(workbook, `${currentTableKey.value}_全量数据_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.xlsx`);
+      return true;
+    } catch (error) {
+      console.error('导出所有数据失败:', error);
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  /**
+   * 导出选中的数据
+   */
+  const exportSelectedData = async () => {
+    if (selectedIds.value.length === 0) return false;
+
+    isLoading.value = true;
+    try {
+      // 从当前记录中过滤出选中的记录
+      const selectedRecords = records.value.filter(
+        record => record.id && selectedIds.value.includes(record.id)
+      );
+
+      // 导出数据
+      const exportData = prepareExportData(selectedRecords);
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, currentTableKey.value);
+
+      // 导出文件
+      XLSX.writeFile(workbook, `${currentTableKey.value}_选中数据_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.xlsx`);
+      return true;
+    } catch (error) {
+      console.error('导出选中数据失败:', error);
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  /**
+   * 准备导出数据
+   */
+  const prepareExportData = (records: DynamicTableRecord[]) => {
+    // 创建字段名到字段标签的映射
+    const fieldLabelMap: Record<string, string> = {};
+    metadataList.value.forEach(field => {
+      fieldLabelMap[field.fieldName] = field.fieldLabel;
+    });
+
+    // 处理导出数据格式
+    return records.map(record => {
+      const exportRow: Record<string, any> = {};
+
+      // 添加ID字段
+      if (record.id) {
+        exportRow['ID'] = record.id;
+      }
+
+      // 添加其他字段，使用字段标签作为表头
+      if (record.data) {
+        Object.entries(record.data).forEach(([fieldName, value]) => {
+          // 使用字段标签作为键名
+          const label = fieldLabelMap[fieldName] || fieldName;
+
+          // 处理不同类型的值
+          if (value === null || value === undefined) {
+            exportRow[label] = '';
+          } else if (typeof value === 'object') {
+            exportRow[label] = JSON.stringify(value);
+          } else {
+            exportRow[label] = value;
+          }
+        });
+      }
+
+      return exportRow;
+    });
+  };
+
+  // 暴露状态和方法
+  return {
+    // 状态
+    currentTableKey,
+    metadataList,
+    sortedMetadata,
+    records,
+    pagedRecords,
+    currentRecord,
+    selectedIds,
+    isAllSelected,
+    isLoading,
+    searchKeyword,
+    searchField,
+    currentPage,
+    pageSize,
+    totalRecords,
+    // 排序相关状态
+    sortField,
+    sortOrder,
+
+    // 方法
+    setCurrentTableKey,
+    resetState,
+    loadMetadata,
+    saveMetadata,
+    deleteMetadata,
+    uploadAvatar,
+    loadRecords,
+    loadRecordsOrderByCreateTime,
+    loadRecordsWithPage,
+    loadRecordsWithPageOrderByName,
+    loadRecordsWithPageOrderByCreateTime,
+    setCurrentRecord,
+    saveRecord,
+    deleteRecord,
+    deleteSelectedRecords,
+    toggleSelect,
+    setSearchParams,
+    applySearch,
+    initTable,
+    exportCurrentPageData,
+    exportAllData,
+    exportSelectedData
+
+  };
 });

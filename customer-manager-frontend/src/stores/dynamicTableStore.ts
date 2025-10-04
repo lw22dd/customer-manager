@@ -333,14 +333,8 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
 
         const defaultPageSize = 10; // 默认每页显示10条数据
         pageSize.value = defaultPageSize;
-        // 根据当前排序状态决定调用哪个加载方法
-        if (sortField.value === 'name') {
-          await loadRecordsWithPageOrderByName(1, defaultPageSize);
-        } else if (sortField.value === 'createTime') {
-          await loadRecordsWithPageOrderByCreateTime(1, defaultPageSize, sortOrder.value);
-        } else {
-          await loadRecordsWithPage(1, defaultPageSize);
-        }
+        // 使用姓名首字母排序重新加载数据
+        await loadRecordsWithPageOrderByName(1, defaultPageSize);
 
         return { success: true };
       }
@@ -366,14 +360,8 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
       const response = await DynamicTableApi.deleteRecord(id);
       console.log('删除记录结果:', response);
       if (response.code === 200 && response.data) {
-        // 根据当前排序状态决定调用哪个加载方法
-        if (sortField.value === 'name') {
-          await loadRecordsWithPageOrderByName(currentPage.value, 10);
-        } else if (sortField.value === 'createTime') {
-          await loadRecordsWithPageOrderByCreateTime(currentPage.value, 10, sortOrder.value);
-        } else {
-          await loadRecordsWithPage(currentPage.value, 10);
-        }
+        // 使用姓名首字母排序重新加载数据
+        await loadRecordsWithPageOrderByName(currentPage.value, 10);
         return true;
       }
 
@@ -403,14 +391,8 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
       const response = await DynamicTableApi.deleteRecords(selectedIds.value);
       console.log('批量删除记录结果:', response);
       if (response.code === 200 && response.data) {
-        // 根据当前排序状态决定调用哪个加载方法
-        if (sortField.value === 'name') {
-          await loadRecordsWithPageOrderByName(currentPage.value, 10);
-        } else if (sortField.value === 'createTime') {
-          await loadRecordsWithPageOrderByCreateTime(currentPage.value, 10, sortOrder.value);
-        } else {
-          await loadRecordsWithPage(currentPage.value, 10);
-        }
+        // 使用姓名首字母排序重新加载数据
+        await loadRecordsWithPageOrderByName(currentPage.value, 10);
         selectedIds.value = [];
         return true;
       } else {
@@ -433,8 +415,8 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     try {
       const result = await DynamicTableApi.uploadAvatar(id, avatar);
       if (result.code === 200 && result.data) {
-        // 重新加载数据以更新头像
-        await loadRecords();
+        // 重新加载数据以更新头像，使用姓名首字母排序
+        await loadRecordsWithPageOrderByName(currentPage.value, pageSize.value);
         return true;
       } else {
         console.error('上传头像失败:', result.msg);
@@ -478,9 +460,9 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
 
     currentPage.value = 1;
     if (!searchKeyword.value.trim()) {
-      // 如果没有搜索关键词，加载所有记录
-      console.log('空关键词搜索，加载全量数据');
-      await loadRecordsWithPage(1, 10);
+      // 如果没有搜索关键词，使用姓名首字母排序加载数据
+      console.log('空关键词搜索，加载按姓名排序的数据');
+      await loadRecordsWithPageOrderByName(1, pageSize.value);
       return;
     }
     isLoading.value = true;
@@ -496,6 +478,12 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
         if (response.code === 200 && response.data) {
           records.value = response.data;
           totalRecords.value = response.data.length;
+          // 对搜索结果按姓名首字母排序
+          records.value.sort((a, b) => {
+            const nameA = a.data?.name?.charAt(0).toUpperCase() || '';
+            const nameB = b.data?.name?.charAt(0).toUpperCase() || '';
+            return nameA.localeCompare(nameB);
+          });
         }
 
       } else {
@@ -507,6 +495,12 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
         if (response.code === 200 && response.data) {
           records.value = response.data;
           totalRecords.value = response.data.length;
+          // 对搜索结果按姓名首字母排序
+          records.value.sort((a, b) => {
+            const nameA = a.data?.name?.charAt(0).toUpperCase() || '';
+            const nameB = b.data?.name?.charAt(0).toUpperCase() || '';
+            return nameA.localeCompare(nameB);
+          });
         }
       }
       // 重新分页
@@ -526,7 +520,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     setCurrentTableKey(tableKey);
     await Promise.all([
       loadMetadata(),
-      loadRecordsWithPage(1, 10)
+      loadRecordsWithPageOrderByName(1, 10)
     ]);
   };
 
@@ -590,50 +584,23 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
 
         if (searchResponse.code === 200 && searchResponse.data) {
           allRecords = searchResponse.data;
+          // 对搜索结果按姓名首字母排序
+          allRecords.sort((a, b) => {
+            const nameA = a.data?.name?.charAt(0).toUpperCase() || '';
+            const nameB = b.data?.name?.charAt(0).toUpperCase() || '';
+            return nameA.localeCompare(nameB);
+          });
         }
       } else {
-        // 没有搜索条件，根据当前排序状态选择不同的API获取数据
-        if (sortField.value === 'name') {
-          // 按姓名首字母排序
-          const response = await DynamicTableApi.getRecordsByTableKey(currentTableKey.value);
-          if (response.code === 200 && response.data) {
-            // 前端按姓名首字母排序
-            allRecords = response.data.sort((a, b) => {
-              const nameA = a.data?.name?.charAt(0).toUpperCase() || '';
-              const nameB = b.data?.name?.charAt(0).toUpperCase() || '';
-              return nameA.localeCompare(nameB);
-            });
-          }
-        } else if (sortField.value === 'createTime') {
-          // 按创建时间排序
-          const response = await DynamicTableApi.getRecordsByTableKeyOrderByCreateTime(currentTableKey.value, sortOrder.value);
-          if (response.code === 200 && response.data) {
-            allRecords = response.data;
-          }
-        } else {
-          // 默认排序，分页加载所有数据
-          let currentPageNum = 1;
-          const pageSizeNum = 100; // 每页100条，防止一次性加载过多数据
-          let hasMoreData = true;
-
-          while (hasMoreData) {
-            const response = await DynamicTableApi.getRecordsByTableKeyWithPage(
-              currentTableKey.value,
-              currentPageNum,
-              pageSizeNum
-            );
-
-            if (response.code === 200 && response.data && response.data.items) {
-              const pageRecords = response.data.items;
-              allRecords = [...allRecords, ...pageRecords];
-
-              // 检查是否还有更多数据
-              hasMoreData = pageRecords.length === pageSizeNum;
-              currentPageNum++;
-            } else {
-              hasMoreData = false;
-            }
-          }
+        // 没有搜索条件，按姓名首字母排序获取所有数据
+        const response = await DynamicTableApi.getRecordsByTableKey(currentTableKey.value);
+        if (response.code === 200 && response.data) {
+          // 前端按姓名首字母排序
+          allRecords = response.data.sort((a, b) => {
+            const nameA = a.data?.name?.charAt(0).toUpperCase() || '';
+            const nameB = b.data?.name?.charAt(0).toUpperCase() || '';
+            return nameA.localeCompare(nameB);
+          });
         }
       }
 

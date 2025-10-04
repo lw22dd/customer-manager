@@ -42,3 +42,5 @@ INSERT INTO dynamic_table_record (table_key, data) VALUES
 INSERT INTO dynamic_table_record (table_key, data) VALUES
 ('customer', '{"name":"张三","phone":"13800138000","address":"北京市朝阳区","idCard":"110101199001011234","birthday":"1990-01-01","height":175.5,"weight":65.0,"shoeSize":"42","clothesSize":"L","athleteLevel":"一级运动员","refereeLevel":null,"familyHeritage":"无","avatar":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="}'),
 ('customer', '{"name":"李四","phone":"13900139000","address":"上海市浦东新区","idCard":"310101199202021234","birthday":"1992-02-02","height":168.0,"weight":55.5,"shoeSize":"38","clothesSize":"M","athleteLevel":null,"refereeLevel":"一级裁判员","familyHeritage":"祖父是武术教练","avatar":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="}');*/
+
+

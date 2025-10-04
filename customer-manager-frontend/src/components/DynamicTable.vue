@@ -32,10 +32,9 @@
         <el-col :lg="8" :xs="24" class="mt-2 lg:mt-0">
           <!-- 排序选择 -->
           <div class="sort-container" style="display: flex; align-items: center; margin-bottom: 10px;">
-            <el-select v-model="sortField" placeholder="选择排序方式" style="width: 180px; margin-right: 10px;">
-              <el-option value="" label="默认（创建时间升序）"></el-option>
+            <el-select v-model="sortField" placeholder="默认（姓名首字母A-Z）" style="width: 180px; margin-right: 10px;">
+              <el-option value="" label="默认（姓名首字母A-Z）"></el-option>
               <el-option value="name" label="姓名首字母A-Z"></el-option>
-              <el-option value="createTime" label="创建时间降序"></el-option>
             </el-select>
             <el-button @click="handleSort" size="small">应用排序</el-button>
           </div>
@@ -133,8 +132,9 @@
           </span>
         </el-col>
         <el-col :xs="24" :sm="12" class="mt-2 sm:mt-0">
-          <el-pagination background layout="prev, pager, next" :total="totalRecords" :page-size="pageSize"
-            :current-page="currentPage" @current-change="changePage" style="float: right" />
+          <el-pagination background layout="prev, pager, next, sizes" :total="totalRecords" :page-size="pageSize"
+            :current-page="currentPage" @current-change="changePage" @size-change="handleSizeChange"
+            :page-sizes="[10, 20, 50]" style="float: right" />
         </el-col>
       </el-row>
     </div>
@@ -169,11 +169,10 @@
             :rules="!isViewMode && field.required ? [{ required: true, message: `请输入${field.fieldLabel}`, trigger: 'blur' }] : []"
             class="mb-4">
             <div v-if="field.fieldType === 'text'">
-              <el-autocomplete v-model="formData[field.fieldName]"
-                :fetch-suggestions="(query: string, callback: (results: { value: string }[]) => void) => handleTextSuggestions(field.fieldName, query, callback)"
+              <el-input v-model="formData[field.fieldName]"
                 :placeholder="isViewMode && !formData[field.fieldName] ? '' : (field.placeholder ||
                   `请输入${field.fieldLabel}`)" :maxlength="field.maxLength || 200" show-word-limit
-                @select="(item: { value: string }) => formData[field.fieldName] = item.value" clearable />
+                clearable />
             </div>
             <div v-else-if="field.fieldType === 'number'">
               <el-input-number v-model.number="formData[field.fieldName]"
@@ -361,28 +360,6 @@ const totalPages = computed(() => {
 // 方法
 
 /**
- * 文本字段联想
- */
-const handleTextSuggestions = (
-  fieldName: string,
-  query: string,
-  callback: (results: { value: string }[]) => void
-) => {
-  // 1. 从已有记录中提取当前字段的所有非空值
-  const allValues = records.value
-    .map(record => record.data?.[fieldName] || '') // 取该字段的值
-    .filter(value => typeof value === 'string' && value.trim() !== ''); // 过滤空值和非字符串
-
-  // 2. 过滤出包含查询词的结果，并去重（避免重复显示）
-  const uniqueSuggestions = Array.from(new Set(
-    allValues.filter(value => value.toLowerCase().includes(query.toLowerCase()))
-  )).map(value => ({ value })); // 格式化为{ value: string }结构
-
-  // 3. 调用回调返回联想结果（延迟100ms提升体验，避免输入过快）
-  setTimeout(() => {
-    callback(uniqueSuggestions);
-  }, 100);
-};/**
  * 格式化日期
  */
 const formatDate = (dateString: string): string => {
@@ -437,36 +414,28 @@ const resetSearch = () => {
 };
 
 /**
- * 切换页码
- */
-const changePage = (page: number) => {
-  if (page < 1 || page > totalPages.value) return;
-  
-  // 根据当前的排序状态调用相应的分页加载方法
-  if (sortField.value === 'name') {
-    store.loadRecordsWithPageOrderByName(page, pageSize.value);
-  } else if (sortField.value === 'createTime') {
-    store.loadRecordsWithPageOrderByCreateTime(page, pageSize.value, 'DESC');
-  } else {
-    // 默认排序，使用创建时间升序
-    store.loadRecordsWithPageOrderByCreateTime(page, pageSize.value, 'ASC');
-  }
-};
+   * 切换页码
+   */
+  const changePage = (page: number) => {
+    if (page < 1 || page > totalPages.value) return;
+    
+    // 根据当前的排序状态调用相应的分页加载方法
+    if (sortField.value === 'name' || sortField.value === '') {
+      // 姓名首字母排序，包括默认排序
+      store.loadRecordsWithPageOrderByName(page, pageSize.value);
+    }
+  };
 
 /**
- * 处理排序请求
- */
-const handleSort = async () => {
-  // 根据选择的排序字段调用不同的排序方法
-  if (sortField.value === 'name') {
-    await store.loadRecordsWithPageOrderByName(currentPage.value, pageSize.value);
-  } else if (sortField.value === 'createTime') {
-    await store.loadRecordsWithPageOrderByCreateTime(currentPage.value, pageSize.value, 'DESC');
-  } else {
-    // 默认排序，使用创建时间升序
-    await store.loadRecordsWithPageOrderByCreateTime(currentPage.value, pageSize.value, 'ASC');
-  }
-};
+   * 处理排序请求
+   */
+  const handleSort = async () => {
+    // 根据选择的排序字段调用不同的排序方法
+    if (sortField.value === 'name' || sortField.value === '') {
+      // 姓名首字母排序，包括默认排序
+      await store.loadRecordsWithPageOrderByName(currentPage.value, pageSize.value);
+    }
+  };
 
 /**
  * 查看记录（只读）
@@ -679,17 +648,30 @@ const confirmDelete = async () => {
 };
 
 /**
- * 确认批量删除
- */
-const confirmBatchDelete = async () => {
-  console.log('尝试批量删除');
-  const result = await store.deleteSelectedRecords();
-  if (result) {
-    closeBatchDeleteModal();
-  } else {
-    alert('删除失败，请重试');
-  }
-};
+   * 确认批量删除
+   */
+  const confirmBatchDelete = async () => {
+    console.log('尝试批量删除');
+    const result = await store.deleteSelectedRecords();
+    if (result) {
+      closeBatchDeleteModal();
+    } else {
+      alert('删除失败，请重试');
+    }
+  };
+
+  /**
+   * 处理每页显示数量变化
+   */
+  const handleSizeChange = (size: number) => {
+    store.pageSize = size;
+    // 重置到第一页
+    store.currentPage = 1;
+    // 重新加载数据
+    if (sortField.value === 'name' || sortField.value === '') {
+      store.loadRecordsWithPageOrderByName(1, size);
+    }
+  };
 
 /**
  * 处理表格选择变更事件

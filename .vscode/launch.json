@@ -1,0 +1,32 @@
+{
+    "configurations": [
+        {
+            "args": "",
+            "cwd": "${workspaceFolder}",
+            "encoding": "UTF-8",
+            "envFile": "${workspaceFolder}/.env",
+            "mainClass": "com.example.eureka.EurekaServerApp",
+            "name": "Spring Boot-EurekaServerApp<eureka>",
+            "projectName": "eureka",
+            "request": "launch",
+            "type": "java"
+        },
+        {
+            "mainClass": "${file}",
+            "name": "Current File",
+            "request": "launch",
+            "type": "java"
+        },
+        {
+            "mainClass": "com.wushu.customer.manager.CustomerManagerApplication",
+            "name": "CustomerManagerApplication",
+            "projectName": "customer-manager-backend",
+            "request": "launch",
+            "type": "java"
+        }
+    ],
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0"
+}

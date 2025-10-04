@@ -313,7 +313,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
         const searchResponseByName = await DynamicTableApi.searchByFieldAndKeyword(currentTableKey.value, 'name', record.data.name);
         console.log('名称搜索结果:', searchResponseByName);
         console.log('搜索结果长度:', searchResponseByName.data?.length);
-        if (searchResponseByName.code === 200 && searchResponseByName.data && searchResponseByName.data.length > 0) {
+        if (searchResponseByName.code === 200 && searchResponseByName.data && searchResponseByName.data.length > 0 && searchResponseByName.data[0].data.name === record.data.name) {
           console.warn('名称已存在:', record.data.name);
           return { success: false, reason: 'nameDuplicate' };
         }
@@ -321,7 +321,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
         // 检查手机号重复
         const searchResponseByPhone = await DynamicTableApi.searchByFieldAndKeyword(currentTableKey.value, 'phone', record.data.phone);
         console.log('手机号搜索结果:', searchResponseByPhone);
-        if (searchResponseByPhone.code === 200 && searchResponseByPhone.data && searchResponseByPhone.data.length > 0) {
+        if (searchResponseByPhone.code === 200 && searchResponseByPhone.data && searchResponseByPhone.data.length > 0 && searchResponseByPhone.data[0].data.phone === record.data.phone) {
           console.warn('手机号已存在:', record.data.phone);
           return { success: false, reason: 'phoneDuplicate' };
         }

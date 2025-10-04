@@ -649,6 +649,8 @@ const saveRecord = async () => {
   if (result.success) {
     // 成功保存，关闭模态框
     closeModal();
+    // 清除当前记录，防止后续新增操作被误认为是更新操作
+    store.setCurrentRecord(null);
   } else {
     // 失败情况，根据原因显示不同提示
     if (result.reason === 'nameDuplicate') {

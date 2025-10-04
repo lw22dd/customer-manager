@@ -30,7 +30,7 @@
     <select id="findByTableKeyOrderByCreateTime" resultMap="DynamicTableRecordMap">
         SELECT * FROM dynamic_table_record 
         WHERE table_key = #{tableKey} 
-        ORDER BY create_time ${order}
+        ORDER BY create_time ${orderBy}
     </select>
 
     <!-- 分页获取记录 -->
@@ -53,7 +53,7 @@
     <select id="findByTableKeyWithPageOrderByCreateTime" resultMap="DynamicTableRecordMap">
         SELECT * FROM dynamic_table_record 
         WHERE table_key = #{tableKey} 
-        ORDER BY create_time ${order}
+        ORDER BY create_time ${orderBy}
         LIMIT #{offset}, #{limit}
     </select>
 
@@ -85,7 +85,7 @@
     </select>
 
     <!-- 插入记录 -->
-    <insert id="insert" parameterType="com.wushu.customer.manager.model.DynamicTableRecord" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insert" parameterType="com.wushu.customer.manager.model.DynamicTableRecord" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         INSERT INTO dynamic_table_record(table_key, data, create_time, update_time)
         VALUES (#{tableKey}, #{data, typeHandler=com.wushu.customer.manager.config.JsonTypeHandler}, #{createTime}, #{updateTime})
     </insert>

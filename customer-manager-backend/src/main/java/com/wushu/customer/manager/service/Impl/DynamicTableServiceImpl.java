@@ -1,6 +1,5 @@
 package com.wushu.customer.manager.service.Impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wushu.customer.manager.dao.DynamicTableMetadataMapper;
 import com.wushu.customer.manager.dao.DynamicTableRecordMapper;
@@ -70,7 +69,20 @@ public class DynamicTableServiceImpl implements DynamicTableService {
     
     @Override
     public List<DynamicTableRecord> getRecordsByTableKeyOrderByName(String tableKey) {
-        return recordMapper.findByTableKeyOrderByName(tableKey);
+        // 从数据库获取记录
+        List<DynamicTableRecord> records = recordMapper.findByTableKeyOrderByName(tableKey);
+        
+        // 使用Java的Collator类进行中文按拼音排序
+        if (records != null && !records.isEmpty()) {
+            records.sort((r1, r2) -> {
+                String name1 = r1.getData() != null ? (String) r1.getData().get("name") : "";
+                String name2 = r2.getData() != null ? (String) r2.getData().get("name") : "";
+                // 使用中文Collator进行排序
+                return java.text.Collator.getInstance(java.util.Locale.CHINA).compare(name1, name2);
+            });
+        }
+        
+        return records;
     }
     
     @Override
@@ -93,9 +105,26 @@ public class DynamicTableServiceImpl implements DynamicTableService {
     @Override
     public PagingResult<DynamicTableRecord> getRecordsByTableKeyWithPageOrderByName(String tableKey, int page, int size) {
         int offset = (page - 1) * size;
-        List<DynamicTableRecord> records = recordMapper.findByTableKeyWithPageOrderByName(tableKey, offset, size);
-        long totalCount = recordMapper.countByTableKey(tableKey);
-        return new PagingResult<>(records, totalCount, page, size);
+        // 先获取全量数据以便正确排序
+        List<DynamicTableRecord> allRecords = recordMapper.findByTableKey(tableKey);
+        
+        // 使用Java的Collator类进行中文按拼音排序
+        if (allRecords != null && !allRecords.isEmpty()) {
+            allRecords.sort((r1, r2) -> {
+                String name1 = r1.getData() != null ? (String) r1.getData().get("name") : "";
+                String name2 = r2.getData() != null ? (String) r2.getData().get("name") : "";
+                // 使用中文Collator进行排序
+                return java.text.Collator.getInstance(java.util.Locale.CHINA).compare(name1, name2);
+            });
+        }
+        
+        // 手动进行分页
+        int start = Math.min(offset, allRecords.size());
+        int end = Math.min(start + size, allRecords.size());
+        List<DynamicTableRecord> paginatedRecords = allRecords.subList(start, end);
+        
+        long totalCount = allRecords.size();
+        return new PagingResult<>(paginatedRecords, totalCount, page, size);
     }
     
     @Override

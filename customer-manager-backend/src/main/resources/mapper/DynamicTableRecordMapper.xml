@@ -23,7 +23,7 @@
     <select id="findByTableKeyOrderByName" resultMap="DynamicTableRecordMap">
         SELECT * FROM dynamic_table_record 
         WHERE table_key = #{tableKey} 
-        ORDER BY JSON_EXTRACT(data, '$.name') ASC
+        ORDER BY upper(JSON_EXTRACT(data, '$.name')) COLLATE NOCASE ASC
     </select>
 
     <!-- 根据表标识获取所有记录，按创建时间排序 -->
@@ -41,11 +41,11 @@
         LIMIT #{offset}, #{limit}
     </select>
 
-    <!-- 分页获取记录，按姓名首字母排序 -->
+    <!-- 分页获取记录，按姓名首字母排序 A-Z -->
     <select id="findByTableKeyWithPageOrderByName" resultMap="DynamicTableRecordMap">
         SELECT * FROM dynamic_table_record 
         WHERE table_key = #{tableKey} 
-        ORDER BY JSON_EXTRACT(data, '$.name') ASC
+        ORDER BY upper(JSON_EXTRACT(data, '$.name')) COLLATE NOCASE ASC
         LIMIT #{offset}, #{limit}
     </select>
 

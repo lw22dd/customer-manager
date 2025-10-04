@@ -1,7 +1,7 @@
 -- 删除已存在的表
-DROP TABLE IF EXISTS user;
+--DROP TABLE IF EXISTS user;
 DROP TABLE IF EXISTS dynamic_table_metadata;
-DROP TABLE IF EXISTS dynamic_table_record;
+--DROP TABLE IF EXISTS dynamic_table_record;
 
 -- 创建新表
 CREATE TABLE IF NOT EXISTS user (

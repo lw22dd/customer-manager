@@ -11,7 +11,6 @@ declare module 'vue' {
     DynamicTable: typeof import('./src/components/DynamicTable.vue')['default']
     DynamicTableManager: typeof import('./src/components/DynamicTableManager.vue')['default']
     ElAlert: typeof import('element-plus/es')['ElAlert']
-    ElBadge: typeof import('element-plus/es')['ElBadge']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElCard: typeof import('element-plus/es')['ElCard']
     ElCheckbox: typeof import('element-plus/es')['ElCheckbox']

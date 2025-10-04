@@ -30,7 +30,7 @@
     <select id="findByTableKeyOrderByCreateTime" resultMap="DynamicTableRecordMap">
         SELECT * FROM dynamic_table_record 
         WHERE table_key = #{tableKey} 
-        ORDER BY create_time ${orderBy}
+        ORDER BY create_time ${order}
     </select>
 
     <!-- 分页获取记录 -->
@@ -53,7 +53,7 @@
     <select id="findByTableKeyWithPageOrderByCreateTime" resultMap="DynamicTableRecordMap">
         SELECT * FROM dynamic_table_record 
         WHERE table_key = #{tableKey} 
-        ORDER BY create_time ${orderBy}
+        ORDER BY create_time ${order}
         LIMIT #{offset}, #{limit}
     </select>
 
